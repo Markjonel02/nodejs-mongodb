@@ -11,6 +11,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 /* routes */
+const accountRoutes = require("./routes/Accountuser");
+app.use("/accounts", accountRoutes);
 
 /* mongo db connection */
 const dbConfig = "mongodb://localhost:27017";

@@ -12,7 +12,7 @@ const AccountSchema = new Schema({
   },
   age: {
     type: BigInt,
-    require: true,
+    required: true,
   },
   eyecolor: {
     type: String,
@@ -20,4 +20,10 @@ const AccountSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("TrackingApplication", AccountSchema);
+module.exports = mongoose.model(
+  "TrackingApplication",
+  AccountSchema,
+  (error) => {
+    error ? console.log("Database Error!") : console.log("Database Connected!");
+  }
+);
