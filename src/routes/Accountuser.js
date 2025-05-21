@@ -6,6 +6,7 @@ const CreateServices = require("../services/Creates");
 const RetrieveServices = require("../services/Retrieve");
 const UpdateServices = require("../services/Update");
 const DeleteServices = require("../services/Delete");
+const { set } = require("mongoose");
 
 /* Create */
 router.post("/create", async (req, res) => {
@@ -38,10 +39,10 @@ router.get("/retrieve", async (req, res) => {
 });
 
 /* Update */
-router.put("/update", async (req, res) => {
+router.post("/update", async (req, res) => {
   try {
-    const { _id, obj } = req.body;
-    const result = await UpdateServices(_id, obj);
+    const { _id, set } = req.body;
+    const result = await UpdateServices(_id, set);
 
     res.status(result ? 200 : 500).send({
       success: result,
