@@ -2,10 +2,13 @@ const Accounts = require("../models/Accounts");
 
 module.exports = async (name, address, age, eyecolor) => {
   try {
-    await Accounts.Tbl_user.insertMany({ name, address, age, eyecolor }); // Wrap in an array
-    return true;
+    // Ensure data is wrapped in an array
+    await Accounts.create({ name, address, age, eyecolor });
+
+    return { success: true, message: "Data inserted successfully" };
   } catch (error) {
     console.error("MongoDB insertMany error:", error);
-    return false;
+
+    return { success: false, error: error.message };
   }
 };

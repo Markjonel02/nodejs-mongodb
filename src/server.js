@@ -1,38 +1,31 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
 const app = express();
 const port = 3000;
 
-/* Middleware */
+// Middleware
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-/* Routes */
-const accountRoutes = require("./routes/Accountuser");
-app.use("/accounts", accountRoutes);
-
-/* MongoDB Connection */
-const dbConfig = "mongodb://localhost:27017";
-const dbName = "TrackingApplications";
-const uri = `${dbConfig}/${dbName}`;
-
+// Database Connection
 mongoose
-  .connect(uri, {
+  .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => {
-    console.log("Connected to MongoDB");
+  .then(() => console.log("Database Connected"))
+  .catch((err) => console.error("Database Connection Error:", err));
 
-    /* Start server only after successful DB connection */
-    app.listen(port, () => {
-      console.log(`Application is running on port: ${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit process if DB connection fails
-  });
+// Import Routes
+const accountRoutes = require("./routes/Accountuser");
+app.use("/accounts", accountRoutes);
+
+// Start Server
+app.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+  console.log(`MongoDB URL: ${process.env.MONGO_URL}`);
+});

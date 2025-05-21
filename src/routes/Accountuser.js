@@ -1,76 +1,69 @@
 const express = require("express");
 const router = express.Router();
 
-/* services */
+/* Services */
 const CreateServices = require("../services/Creates");
 const RetrieveServices = require("../services/Retrieve");
 const UpdateServices = require("../services/Update");
 const DeleteServices = require("../services/Delete");
 
+/* Create */
 router.post("/create", async (req, res) => {
-  const { name, address, age, eyecolor } = req.body;
+  try {
+    const { name, address, age, eyecolor } = req.body;
+    const result = await CreateServices(name, address, age, eyecolor);
 
-  const result = await CreateServices(name, address, age, eyecolor);
-
-  if (result) {
-    res.status(200).send({
-      status: result,
-      message: "successfully created!",
+    res.status(result ? 200 : 500).send({
+      success: result,
+      message: result ? "Successfully created!" : "Creation failed!",
     });
-  } else {
-    res.status(500).send({
-      status: result,
-      message: "not created",
-    });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
   }
 });
 
-router.post("/retrieve", async (req, res) => {
-  const result = await RetrieveServices();
+/* Retrieve (Changed to GET) */
+router.get("/retrieve", async (req, res) => {
+  try {
+    const result = await RetrieveServices();
 
-  if (result) {
-    res.status(200).send(results);
-  } else {
-    res.status(500).send({
-      status: result,
-      message: "not Retrieve!",
+    res.status(result ? 200 : 500).send({
+      success: !!result,
+      data: result || null,
+      message: result ? "Successfully retrieved!" : "Retrieval failed!",
     });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
   }
 });
 
-router.post("/update", async (req, res) => {
-  const { _id, obj } = req.body;
+/* Update */
+router.put("/update", async (req, res) => {
+  try {
+    const { _id, obj } = req.body;
+    const result = await UpdateServices(_id, obj);
 
-  const result = await UpdateServices(_id, obj);
-
-  if (result) {
-    res.status(200).send({
-      status: result,
-      message: "successfully Updated!",
+    res.status(result ? 200 : 500).send({
+      success: result,
+      message: result ? "Successfully updated!" : "Update failed!",
     });
-  } else {
-    res.status(500).send({
-      status: result,
-      message: "not Updated!",
-    });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
   }
 });
 
-router.post("/delete", async (req, res) => {
-  const { _id } = req.body;
+/* Delete */
+router.delete("/delete", async (req, res) => {
+  try {
+    const { _id } = req.body;
+    const result = await DeleteServices(_id);
 
-  const result = await DeleteServices(_id);
-
-  if (result) {
-    res.status(200).send({
-      status: result,
-      message: "successfully Deleted!",
+    res.status(result ? 200 : 500).send({
+      success: result,
+      message: result ? "Successfully deleted!" : "Deletion failed!",
     });
-  } else {
-    res.status(500).send({
-      status: result,
-      message: "not Deleted",
-    });
+  } catch (error) {
+    res.status(500).send({ success: false, error: error.message });
   }
 });
 
