@@ -1,7 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const ConnectDB = require("./config/Connection");
 
+ConnectDB(); // Connect to MongoDB
+// Load environment variables
 const app = express();
 const port = 3000;
 
