@@ -1,25 +1,28 @@
-import React from "react";
 import { Box, Text } from "@chakra-ui/react";
+import { Avatar } from "@chakra-ui/react";
+import TopNavigation from "./components/TopNavigation";
 import MainContainer from "./components/MainContainer";
 import SideNavigationBar from "./components/SideNavigationBar";
-import TopNavigation from "./components/TopNavigation";
-import Folders from "../components/Folders";
-const App = () => {
+import Folders from "./components/Folders";
+function App() {
   return (
     <>
-      <header>
-        <TopNavigation />
-      </header>
-      <MainContainer>
-        <Box display="flex" height="100vh">
-          <SideNavigationBar />
-          <Box>
-            <Folders />
+      <Box>
+        <header>
+          <TopNavigation />
+        </header>
+        <MainContainer>
+          <Box display="flex" width="100%" height="100vh">
+            <SideNavigationBar />
+
+            <Box>
+              <Folders />
+            </Box>
           </Box>
-        </Box>
-      </MainContainer>
+        </MainContainer>
+      </Box>
     </>
   );
-};
+}
 
 export default App;
