@@ -9,9 +9,6 @@ function App() {
   return (
     <>
       <Box>
-        <header>
-          <TopNavigation />
-        </header>
         <MainContainer>
           <Box display="flex" width="100%" height="100vh">
             <Box width="250px" padding="20px">
@@ -25,6 +22,7 @@ function App() {
                 This is a sample application demonstrating the use of Chakra UI
                 components.
               </Text>
+              <TopNavigation />
               <Folders />
             </Box>
           </Box>

@@ -3,7 +3,7 @@ import { Box, Text } from "@chakra-ui/react";
 import MainContainer from "./components/MainContainer";
 import SideNavigationBar from "./components/SideNavigationBar";
 import TopNavigation from "./components/TopNavigation";
-import Folders from "./components/Folders";
+import Folders from "../components/Folders";
 const App = () => {
   return (
     <>
@@ -13,8 +13,9 @@ const App = () => {
       <MainContainer>
         <Box display="flex" height="100vh">
           <SideNavigationBar />
-
-          <Folders />
+          <Box>
+            <Folders />
+          </Box>
         </Box>
       </MainContainer>
     </>

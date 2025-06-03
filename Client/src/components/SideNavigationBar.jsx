@@ -6,136 +6,235 @@ import {
   IconButton,
   Text,
   Button,
-  Image,
   Circle,
-  Spacer,
+  useMediaQuery,
+  Menu, // Import Menu
+  MenuButton, // Import MenuButton
+  MenuList, // Import MenuList
+  MenuItem, // Import MenuItem
 } from "@chakra-ui/react";
 
-import { CiCalendar } from "react-icons/ci";
-import { CiFileOn } from "react-icons/ci";
-import { CiTrash } from "react-icons/ci";
-import { MdAssignmentAdd } from "react-icons/md";
-import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
+import { CiCalendar, CiFileOn, CiTrash } from "react-icons/ci";
+import {
+  MdAssignmentAdd,
+  MdOutlineChevronLeft,
+  MdOutlineChevronRight,
+} from "react-icons/md";
+import {
+  HamburgerIcon,
+  AddIcon,
+  ExternalLinkIcon,
+  RepeatIcon,
+  EditIcon,
+} from "@chakra-ui/icons"; // Import Chakra UI icons
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
+
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [Hidden, setHidden] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  const [isSmallScreen] = useMediaQuery("(max-width: 48em)");
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+
+  // Determine if the sidebar should be open based on screen size
+  const actualCollapsedState = isSmallScreen ? !isOverlayOpen : collapsed;
 
   return (
-    <Box
-      w={collapsed ? "100px" : "400px"}
-      bg="white"
-      borderRight="1px solid #e2e8f0"
-      h="100vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-between"
-      transition="width 0.3s ease"
-      position="relative"
-    >
-      <VStack align="stretch" spacing={6} p={4}>
-        {/* Logo */}
-        <HStack justify="space-between">
-          {!collapsed && (
-            <HStack spacing={2} mb={5}>
-              {/*     <Image boxSize="20px" src="/logo.png" alt="Logo" /> */}
-              <Text fontWeight="bold" color="blue.700">
-                MINO
-              </Text>
-            </HStack>
-          )}
-        </HStack>
-
-        {/* Add new section */}
-        <VStack align="start" spacing={2}>
-          <HStack spacing={2} onClick={() => setHidden(!Hidden)}>
-            <MdAssignmentAdd size={30} />
-            {!collapsed && <Text fontWeight="medium">Add new</Text>}
-          </HStack>
-          {Hidden && (
-            <Box
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              {collapsed ? (
-                <VStack spacing={2} align="start" ml={2} mt={2}>
-                  <Circle size="10px" bg="yellow.200" />
-                  <Circle size="10px" bg="blue.400" />
-                  <Circle size="10px" bg="red.500" />
-                  <Circle size="10px" bg="green.500" />
-                  <Circle size="10px" bg="yellow.500" />
-                  <Circle size="10px" bg="blackAlpha.500" />
-                </VStack>
-              ) : (
-                <HStack spacing={2} ml={2} align="start" mt={2}>
-                  <Circle size="10px" bg="yellow.200" />
-                  <Circle size="10px" bg="blue.400" />
-                  <Circle size="10px" bg="red.500" />
-                  <Circle size="10px" bg="green.500" />
-                  <Circle size="10px" bg="yellow.500" />
-                  <Circle size="10px" bg="blackAlpha.500" />
-                </HStack>
-              )}
-            </Box>
-          )}
-        </VStack>
-
-        {/* Navigation Items */}
-        <VStack align="start" spacing={4} color="gray.400" mt={5}>
-          <HStack spacing={2}>
-            <CiCalendar size={25} />
-
-            {!collapsed && <Text>Calander</Text>}
-          </HStack>
-          <HStack spacing={2}>
-            <CiFileOn size={25} />
-            {!collapsed && <Text>Archive</Text>}
-          </HStack>
-          <HStack spacing={2}>
-            <CiTrash size={25} />
-            {!collapsed && <Text>Trash</Text>}
-          </HStack>
-        </VStack>
-      </VStack>
-
-      {/* Upgrade & Toggle Section */}
-      <Box p={4} textAlign="center">
-        {!collapsed && (
-          <>
-            <Text fontSize="xs" color="gray.500" mb={2}>
-              Want to access unlimited notes taking experience & lots of
-              feature?
-            </Text>
-
-            <video src="9zre4m7JbH74ruby0Q.mp4" autoPlay muted loop mx="auto" />
-            <Button size="sm" bg="blue.600" width="100%" mb={4}>
-              Upgrade pro
-            </Button>
-          </>
-        )}
+    <>
+      {/* Hamburger Menu Button for Small Screens */}
+      {isSmallScreen && (
         <Box
-          display="flex"
-          justifyContent={collapsed ? "center" : "flex-start"}
-          w="100%"
+          position="fixed"
+          top="4"
+          left="4"
+          zIndex="sticky"
+          background={"blue.200"}
+          borderRadius="md"
         >
-          <Button
-            onClick={() => setCollapsed(!collapsed)}
-            size="xl"
-            variant="outline"
-            borderColor="transparent"
-            mx="auto"
-            display="block"
-            _hover={{ bg: "none" }}
+          {" "}
+          {/* Adjust position and zIndex as needed */}
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              aria-label="Options"
+              icon={<HamburgerIcon w={6} h={6} />} // Adjust size of HamburgerIcon
+              variant="outline"
+              onClick={() => setIsOverlayOpen(!isOverlayOpen)} // Toggle overlay on click
+            />
+            {/* The MenuList and MenuItem are now directly controlling the sidebar's state */}
+            {/* We'll skip placing the actual sidebar content in the MenuList for this specific overlay requirement.
+                Instead, clicking the HamburgerIcon will open the sidebar overlay. */}
+            {/* You could optionally add more menu items here that trigger other actions, if needed */}
+          </Menu>
+        </Box>
+      )}
+
+      {/* Overlay for small screens */}
+      {isSmallScreen && isOverlayOpen && (
+        <Box
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          bg="blackAlpha.600"
+          zIndex="overlay"
+          onClick={() => setIsOverlayOpen(false)}
+        />
+      )}
+
+      <Box
+        w={actualCollapsedState ? "100px" : "400px"}
+        bg="white"
+        borderRight={isSmallScreen ? "none" : "1px solid #e2e8f0"}
+        h="100vh"
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
+        transition="width 0.3s ease, transform 0.3s ease"
+        position={isSmallScreen ? "fixed" : "relative"}
+        left={isSmallScreen ? (isOverlayOpen ? "0" : "-400px") : "auto"}
+        top="0"
+        zIndex="modal"
+        boxShadow={isSmallScreen ? "lg" : "none"}
+      >
+        <VStack align="stretch" spacing={6} p={4}>
+          {/* Logo */}
+          <HStack justify="space-between">
+            {!actualCollapsedState && (
+              <Text fontSize="xl" fontWeight="bold">
+                My App
+              </Text>
+            )}
+          </HStack>
+
+          {/* Add new section */}
+          <VStack align="start" spacing={2}>
+            <HStack
+              spacing={2}
+              onClick={() => setHidden(!hidden)}
+              cursor="pointer"
+            >
+              <MdAssignmentAdd size={30} />
+              {!actualCollapsedState && (
+                <Text fontWeight="medium">Add new</Text>
+              )}
+            </HStack>
+            {hidden && (
+              <MotionBox
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {actualCollapsedState ? (
+                  <VStack spacing={2} align="start" ml={2} mt={2}>
+                    <Circle size="10px" bg="yellow.200" />
+                    <Circle size="10px" bg="blue.400" />
+                    <Circle size="10px" bg="red.500" />
+                    <Circle size="10px" bg="green.500" />
+                    <Circle size="10px" bg="yellow.500" />
+                    <Circle size="10px" bg="blackAlpha.500" />
+                  </VStack>
+                ) : (
+                  <HStack spacing={2} ml={2} align="start" mt={2}>
+                    <Circle size="10px" bg="yellow.200" />
+                    <Circle size="10px" bg="blue.400" />
+                    <Circle size="10px" bg="red.500" />
+                    <Circle size="10px" bg="green.500" />
+                    <Circle size="10px" bg="yellow.500" />
+                    <Circle size="10px" bg="blackAlpha.500" />
+                  </HStack>
+                )}
+              </MotionBox>
+            )}
+          </VStack>
+
+          {/* Navigation Items */}
+          <VStack align="start" spacing={4} color="gray.400" mt={5}>
+            <HStack
+              spacing={2}
+              cursor="pointer"
+              onClick={() => isSmallScreen && setIsOverlayOpen(false)}
+            >
+              {" "}
+              {/* Close on item click */}
+              <CiCalendar size={25} />
+              {!actualCollapsedState && <Text>Calendar</Text>}
+            </HStack>
+            <HStack
+              spacing={2}
+              cursor="pointer"
+              onClick={() => isSmallScreen && setIsOverlayOpen(false)}
+            >
+              {" "}
+              {/* Close on item click */}
+              <CiFileOn size={25} />
+              {!actualCollapsedState && <Text>Archive</Text>}
+            </HStack>
+            <HStack
+              spacing={2}
+              cursor="pointer"
+              onClick={() => isSmallScreen && setIsOverlayOpen(false)}
+            >
+              {" "}
+              {/* Close on item click */}
+              <CiTrash size={25} />
+              {!actualCollapsedState && <Text>Trash</Text>}
+            </HStack>
+          </VStack>
+        </VStack>
+
+        {/* Upgrade & Toggle Section */}
+        <Box p={4} textAlign="center">
+          {!actualCollapsedState && (
+            <>
+              {/*  <Video src=""></Video> */}
+              <Text fontSize="xs" color="gray.500" mb={2}>
+                Want to access unlimited notes taking experience & lots of
+                feature?
+              </Text>
+              <Button size="sm" bg="blue.600" width="100%" mb={4} color="white">
+                Upgrade pro
+              </Button>
+            </>
+          )}
+          <Box
+            display="flex"
+            bg={actualCollapsedState ? "transparent" : "white"}
+            justifyContent={actualCollapsedState ? "center" : "flex-start"}
+            w="100%"
           >
-            {collapsed ? <MdOutlineChevronRight /> : <MdOutlineChevronLeft />}
-          </Button>
+            {/* The regular toggle button is hidden on small screens */}
+            {!isSmallScreen && (
+              <Button
+                onClick={() => {
+                  if (isSmallScreen) {
+                    setIsOverlayOpen(!isOverlayOpen);
+                  } else {
+                    setCollapsed(!collapsed);
+                  }
+                }}
+                size="xl"
+                variant="outline"
+                borderColor="transparent"
+                mx="auto"
+                display="block"
+                _hover={{ bg: "red.200" }}
+              >
+                {actualCollapsedState ? (
+                  <MdOutlineChevronRight />
+                ) : (
+                  <MdOutlineChevronLeft />
+                )}
+              </Button>
+            )}
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 

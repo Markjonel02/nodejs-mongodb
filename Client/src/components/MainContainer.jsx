@@ -1,18 +1,19 @@
 import React from "react";
-import { Flex } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 
 const MainContainer = ({ children }) => {
   return (
-    <Flex
-      display={"flex"}
-      justifyContent={"center"}
-      alignItems={"center"}
-      width="100%"
-      height="100vh"
-      bgColor="gray.100"
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      minHeight="100vh"
+      margin="0"
+      padding="0"
     >
       {children}
-    </Flex>
+    </Box>
   );
 };
 
