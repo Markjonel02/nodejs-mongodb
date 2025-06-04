@@ -19,26 +19,17 @@ const AddnoteSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
   },
   {
-    timestamps: true, // Automatically manage createdAt and updatedAt fields
+    timestamps: true,
   }
 );
 // Update 'updatedAt' field on save
-AddnoteSchema.pre("save", function (next) {
+/* AddnoteSchema.pre("save", function (next) {
   if (this.isNew) {
     this.date = new Date();
   }
   next();
-});
+}); */
 
 module.exports = mongoose.model("Addnote", AddnoteSchema);

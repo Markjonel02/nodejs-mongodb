@@ -10,8 +10,6 @@ import {
   useMediaQuery,
   Menu, // Import Menu
   MenuButton, // Import MenuButton
-  MenuList, // Import MenuList
-  MenuItem, // Import MenuItem
 } from "@chakra-ui/react";
 
 import { CiCalendar, CiFileOn, CiTrash } from "react-icons/ci";
@@ -20,13 +18,7 @@ import {
   MdOutlineChevronLeft,
   MdOutlineChevronRight,
 } from "react-icons/md";
-import {
-  HamburgerIcon,
-  AddIcon,
-  ExternalLinkIcon,
-  RepeatIcon,
-  EditIcon,
-} from "@chakra-ui/icons"; // Import Chakra UI icons
+import { HamburgerIcon } from "@chakra-ui/icons"; // Import Chakra UI icons
 import { motion } from "framer-motion";
 
 const MotionBox = motion(Box);
@@ -64,9 +56,7 @@ const Sidebar = () => {
               onClick={() => setIsOverlayOpen(!isOverlayOpen)} // Toggle overlay on click
             />
             {/* The MenuList and MenuItem are now directly controlling the sidebar's state */}
-            {/* We'll skip placing the actual sidebar content in the MenuList for this specific overlay requirement.
-                Instead, clicking the HamburgerIcon will open the sidebar overlay. */}
-            {/* You could optionally add more menu items here that trigger other actions, if needed */}
+            
           </Menu>
         </Box>
       )}
