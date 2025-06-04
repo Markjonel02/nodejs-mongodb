@@ -4,6 +4,7 @@ import TopNavigation from "./components/TopNavigation";
 import MainContainer from "./components/MainContainer";
 import SideNavigationBar from "./components/SideNavigationBar";
 import Folders from "./components/Folders";
+import TestFolders from "./components/TestFolder";
 import TestNav from "./components/TestNav";
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
             {/* <SideNavigationBar /> */}
             <TestNav></TestNav>
             <Box>
-              <Folders />
+              <TestFolders />
             </Box>
           </Box>
         </MainContainer>

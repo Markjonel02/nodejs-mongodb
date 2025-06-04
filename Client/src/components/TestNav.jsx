@@ -31,7 +31,7 @@ const Sidebar = () => {
 
   // State for new note form inputs
   const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteContent, setNewNoteContent] = useState("");
+  const [newNoteContent, setNewNoteContent] = useState(""); // Changed from newNoteNotes to newNoteContent
   const [selectedColor, setSelectedColor] = useState("gray.200"); // Default color for new notes
 
   const [isSmallScreen] = useMediaQuery("(max-width: 48em)"); // Detects small screens
@@ -58,7 +58,7 @@ const Sidebar = () => {
 
     try {
       // Make a POST request to your backend API
-      const response = await fetch("http://localhost:3000/api/notes", {
+      const response = await fetch("http://localhost:5000/api/notes", {
         // IMPORTANT: Ensure this URL matches your backend server
         method: "POST",
         headers: {
@@ -67,7 +67,7 @@ const Sidebar = () => {
         body: JSON.stringify({
           // Convert JavaScript object to JSON string
           title: newNoteTitle,
-          content: newNoteContent,
+          notes: newNoteContent, // Ensure this matches your backend model
           color: selectedColor,
         }),
       });
@@ -161,7 +161,7 @@ const Sidebar = () => {
 
       {/* Main Sidebar Container */}
       <Box
-        w={actualCollapsedState ? "100px" : "400px"} // Width changes based on collapsed state
+        w={actualCollapsedState ? "100px" : "200px"} // Width changes based on collapsed state
         bg="white"
         borderRight={isSmallScreen ? "none" : "1px solid #e2e8f0"} // No border on small screens (overlay)
         h="100vh"

@@ -5,314 +5,105 @@ import {
   SimpleGrid,
   Button,
   ButtonGroup,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Input,
-  useDisclosure,
-  useToast, // Import useToast for notifications
+  // Removed Modal imports as they are commented out in your original code
+  // and likely handled by the Sidebar's 'Add new' section
+  // FormControl,
+  // FormLabel,
+  // Input,
+  // useDisclosure, // Removed if not used for modals within this component
+  useToast, // Import useToast for feedback messages, useful for fetch errors
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useState, useEffect } from "react"; // Import useEffect
-import { FaFileCirclePlus } from "react-icons/fa6";
-import { IoFolderSharp } from "react-icons/io5";
 import { FaNoteSticky } from "react-icons/fa6";
-import { HiPencilSquare } from "react-icons/hi2";
+/* import { HiPencilSquare } from "react-icons/hi2"; // Not used currently */
 
-const API_BASE_URL = "http://localhost:5000/api"; // Your backend API base URL
-
-const Folder = () => {
-  const [activeFolderTab, setActiveFolderTab] = useState("Todays");
+const Folders = () => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
+  const [notes, setNotes] = useState([]); // State to store fetched notes
+  const [loading, setLoading] = useState(true); // State for loading indicator
+  const [error, setError] = useState(null); // State for error handling
+  const toast = useToast(); // Initialize Chakra UI toast
 
-  // State to store folders and notes fetched from the backend
-  const [folders, setFolders] = useState([]);
-  const [notes, setNotes] = useState([]);
+  // Assuming you might receive a trigger from the Sidebar to re-fetch notes.
+  // For now, we'll just use a simple state to trigger a re-fetch.
+  // In a real app, this might be handled via context API, Redux, or a callback.
+  const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
-  // Disclosure hooks for modals
-  const {
-    isOpen: isFolderModalOpen,
-    onOpen: onFolderModalOpen,
-    onClose: onFolderModalClose,
-  } = useDisclosure();
-  const {
-    isOpen: isNoteModalOpen,
-    onOpen: onNoteModalOpen,
-    onClose: onNoteModalClose,
-  } = useDisclosure();
-
-  // State for new folder input
-  const [newFolderTitle, setNewFolderTitle] = useState("");
-
-  // State for new note inputs
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteContent, setNewNoteContent] = useState("");
-
-  const toast = useToast(); // Initialize toast
-
-  // --- Functions to fetch data from backend ---
-  const fetchFolders = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/folders`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setFolders(data);
-    } catch (error) {
-      console.error("Error fetching folders:", error);
-      toast({
-        title: "Error fetching folders.",
-        description: "Could not load folders from the server.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
+  // Function to fetch notes from the backend
   const fetchNotes = async () => {
+    setLoading(true); // Indicate loading state
+    setError(null); // Clear previous errors
+
     try {
-      const response = await fetch(`${API_BASE_URL}/notes`);
+      const response = await fetch("http://localhost:5000/api/notes", {
+        method: "GET", // Explicitly set GET method
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
+
       const data = await response.json();
-      setNotes(data);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
+      setNotes(data); // Update state with fetched notes
+    } catch (err) {
+      console.error("Error fetching notes:", err);
+      setError("Failed to load notes. Please try again later.");
+
       toast({
         title: "Error fetching notes.",
         description: "Could not load notes from the server.",
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
+        position: "top",
       });
+    } finally {
+      setLoading(false); // Reset loading state
     }
   };
 
-  // Fetch data on component mount
+  // useEffect to fetch notes when the component mounts or when shouldRefetchNotes changes
   useEffect(() => {
-    fetchFolders();
     fetchNotes();
-  }, []);
+  }, [shouldRefetchNotes]); // Re-fetch notes if shouldRefetchNotes changes
 
-  // --- Handlers for adding new data ---
-  const handleAddFolder = async () => {
-    if (!newFolderTitle.trim()) {
-      toast({
-        title: "Input required.",
-        description: "Folder title cannot be empty.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/folders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title: newFolderTitle }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const newFolder = await response.json();
-      setFolders((prevFolders) => [newFolder, ...prevFolders].slice(0, 4)); // Add new folder and keep only 4 recent
-      setNewFolderTitle(""); // Clear the input
-      onFolderModalClose();
-      toast({
-        title: "Folder created.",
-        description: "Your new folder has been added.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error("Error adding folder:", error);
-      toast({
-        title: "Error creating folder.",
-        description: "There was an issue adding your folder.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const handleAddNote = async () => {
-    if (!newNoteTitle.trim() || !newNoteContent.trim()) {
-      toast({
-        title: "Inputs required.",
-        description: "Note title and content cannot be empty.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/notes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: newNoteTitle,
-          content: newNoteContent,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const newNote = await response.json();
-      setNotes((prevNotes) => [newNote, ...prevNotes].slice(0, 4)); // Add new note and keep only 4 recent
-      setNewNoteTitle(""); // Clear the input
-      setNewNoteContent(""); // Clear the input
-      onNoteModalClose();
-      toast({
-        title: "Note created.",
-        description: "Your new note has been added.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error("Error adding note:", error);
-      toast({
-        title: "Error creating note.",
-        description: "There was an issue adding your note.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
-  const renderFolderContent = () => {
-    return (
-      <Box position="relative" width="100%" mb={8}>
-        <Box
-          width={{ base: "100%" }}
-          pr={{ base: 0, md: 4 }}
-          mb={6}
-          display="flex"
-          flexDirection={{ base: "column", md: "column", lg: "row" }}
-          alignItems={{ base: "flex-start", md: "center" }}
-          gap={4}
-        >
-          {/* Recent Folders */}
-          <Box flex="1" width="100%">
-            <SimpleGrid
-              columns={{ base: 1, sm: 2, md: 3, lg: 4 }}
-              spacing={4}
-              mt={4}
-              gap={4}
-            >
-              {folders.map((folder, index) => (
-                <Box
-                  key={folder._id || index} // Use _id from MongoDB if available
-                  p={6}
-                  bg={folder.color}
-                  borderRadius="lg"
-                  position="relative"
-                  width="100%"
-                  boxShadow="md"
-                  textAlign="left"
-                >
-                  <IoFolderSharp color="#53b1ffff" mb="4" size={30} />
-
-                  <Text fontWeight="bold" fontSize="lg" mt={5}>
-                    {folder.title}
-                  </Text>
-                  <Text fontSize="12px" mt={1}>
-                    {new Date(folder.createdAt).toLocaleDateString()}
-                  </Text>
-                  <Button
-                    size="sm"
-                    position="absolute"
-                    top={3}
-                    right={3}
-                    aria-label="More"
-                    variant="ghost"
-                    _hover={{ bg: "transparent" }}
-                  >
-                    <FiMoreHorizontal size={20} />
-                  </Button>
-                </Box>
-              ))}
-            </SimpleGrid>
-          </Box>
-
-          {/* Add New Folder Button */}
-          <Box
-            border="2px dashed gray"
-            borderRadius="lg"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            w={{ base: "100%", md: "120px", lg: "120px" }}
-            h={{ base: "auto", md: "100%" }}
-            minH={{ base: "100px", md: "auto" }}
-            p={4}
-            _hover={{ borderColor: "blue.300", cursor: "pointer" }}
-            flexShrink={0}
-            onClick={onFolderModalOpen}
-          >
-            <FaFileCirclePlus size={32} color="gray" />
-            <Text color="gray.400" mt={3} fontSize="sm" textAlign={"center"}>
-              Add New Folder
-            </Text>
-          </Box>
-        </Box>
-
-        {/* Add New Folder Modal */}
-        <Modal isOpen={isFolderModalOpen} onClose={onFolderModalClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add New Folder</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <FormControl>
-                <FormLabel>Folder Title</FormLabel>
-                <Input
-                  placeholder="Enter folder title"
-                  value={newFolderTitle}
-                  onChange={(e) => setNewFolderTitle(e.target.value)}
-                />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={onFolderModalClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="blue" ml={3} onClick={handleAddFolder}>
-                Create Folder
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </Box>
-    );
+  // Dummy function to simulate triggering a re-fetch after a new note is added
+  // In a real application, the Sidebar's handleSaveNote would call a prop function
+  // from this component, or update a global state that this component listens to.
+  const handleNoteAddedSuccessfully = () => {
+    setShouldRefetchNotes((prev) => !prev); // Toggle to trigger useEffect
   };
 
   const renderNoteContent = () => {
+    if (loading) {
+      return (
+        <Text textAlign="center" mt={8}>
+          Loading notes...
+        </Text>
+      );
+    }
+
+    if (error) {
+      return (
+        <Text textAlign="center" mt={8} color="red.500">
+          {error}
+        </Text>
+      );
+    }
+
+    if (notes.length === 0) {
+      return (
+        <Text textAlign="center" mt={8}>
+          No notes found. Start by adding a new one!
+        </Text>
+      );
+    }
+
     return (
       <Box position="relative" width="100%" mb={8}>
         <Box
@@ -334,7 +125,7 @@ const Folder = () => {
             >
               {notes.map((note, index) => (
                 <Box
-                  key={note._id || index} // Use _id from MongoDB if available
+                  key={note._id || index} // Use note._id if available from backend, otherwise index
                   p={6}
                   bg={note.color}
                   borderRadius="lg"
@@ -347,13 +138,13 @@ const Folder = () => {
                   <Text fontWeight="bold" fontSize="lg" mt={5}>
                     {note.title}
                   </Text>
-                  <Text fontSize="12px" mt={1} noOfLines={2}>
-                    {" "}
-                    {/* Added noOfLines */}
-                    {note.content}
+                  <Text fontSize="12px" mt={1}>
+                    {note.notes}{" "}
+                    {/* Ensure this matches your backend field (notes, not content) */}
                   </Text>
                   <Text fontSize="12px" mt={1}>
-                    {new Date(note.createdAt).toLocaleDateString()}
+                    {new Date(note.createdAt).toLocaleDateString()}{" "}
+                    {/* Format date */}
                   </Text>
                   <Button
                     size="sm"
@@ -370,92 +161,17 @@ const Folder = () => {
               ))}
             </SimpleGrid>
           </Box>
-
-          {/* Add New Note Button */}
-          <Box
-            border="2px dashed gray"
-            borderRadius="lg"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            w={{ base: "100%", md: "120px", lg: "120px" }}
-            h={{ base: "auto", md: "100%" }}
-            minH={{ base: "100px", md: "auto" }}
-            p={4}
-            _hover={{ borderColor: "blue.300", cursor: "pointer" }}
-            flexShrink={0}
-            onClick={onNoteModalOpen}
-          >
-            <HiPencilSquare size={32} color="gray" />
-            <Text color="gray.400" mt={3} fontSize="sm" textAlign={"center"}>
-              Add New Note
-            </Text>
-          </Box>
         </Box>
-
-        {/* Add New Note Modal */}
-        <Modal isOpen={isNoteModalOpen} onClose={onNoteModalClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add New Note</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <FormControl mb={4}>
-                <FormLabel>Note Title</FormLabel>
-                <Input
-                  placeholder="Enter note title"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Note Content</FormLabel>
-                <Input
-                  placeholder="Enter note content"
-                  value={newNoteContent}
-                  onChange={(e) => setNewNoteContent(e.target.value)}
-                />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={onNoteModalClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="blue" ml={3} onClick={handleAddNote}>
-                Create Note
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
       </Box>
     );
   };
 
   return (
     <Box p={6} bg="gray.50" minH="100vh">
-      <Heading mb={4} textAlign="center">
-        Recent Folders
-      </Heading>
-      <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
-        {["Todays", "This Week", "This Month"].map((tab) => (
-          <Button
-            key={tab}
-            variant="ghost"
-            fontWeight={activeFolderTab === tab ? "bold" : "normal"}
-            borderBottom={activeFolderTab === tab ? "2px solid black" : "none"}
-            onClick={() => setActiveFolderTab(tab)}
-          >
-            {tab}
-          </Button>
-        ))}
-      </ButtonGroup>
-      {renderFolderContent()}
-
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
       </Heading>
+
       <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
@@ -469,9 +185,10 @@ const Folder = () => {
           </Button>
         ))}
       </ButtonGroup>
+
       {renderNoteContent()}
     </Box>
   );
 };
 
-export default Folder;
+export default Folders;
