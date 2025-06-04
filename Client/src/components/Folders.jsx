@@ -20,8 +20,8 @@ import {
 
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useState } from "react";
-import { FaFileCirclePlus } from "react-icons/fa6";
-import { IoFolderSharp } from "react-icons/io5";
+/* import { FaFileCirclePlus } from "react-icons/fa6";
+import { IoFolderSharp } from "react-icons/io5"; */
 import { FaNoteSticky } from "react-icons/fa6";
 import { HiPencilSquare } from "react-icons/hi2";
 
@@ -84,19 +84,19 @@ const Folders = () => {
   } = useDisclosure();
 
   // State for new folder input
-  const [newFolderTitle, setNewFolderTitle] = useState("");
+  /*   const [newFolderTitle, setNewFolderTitle] = useState(""); */
 
   // State for new note inputs
   const [newNoteTitle, setNewNoteTitle] = useState("");
   const [newNoteContent, setNewNoteContent] = useState("");
 
-  const handleAddFolder = () => {
+  /*   const handleAddFolder = () => {
     // In a real application, you'd add logic here to save the new folder
     // For now, we'll just log it and close the modal
     console.log("New Folder Title:", newFolderTitle);
     setNewFolderTitle(""); // Clear the input
     onFolderModalClose();
-  };
+  }; */
 
   const handleAddNote = () => {
     // In a real application, you'd add logic here to save the new note
@@ -106,123 +106,6 @@ const Folders = () => {
     setNewNoteTitle(""); // Clear the input
     setNewNoteContent(""); // Clear the input
     onNoteModalClose();
-  };
-
-  const renderFolderContent = () => {
-    return (
-      <Box position="relative" width="100%" mb={8}>
-        <Box
-          width={{ base: "100%" }}
-          pr={{ base: 0, md: 4 }}
-          mb={6}
-          display="flex"
-          flexDirection={{ base: "column", md: "column", lg: "row" }}
-          alignItems={{ base: "flex-start", md: "center" }}
-          gap={4}
-        >
-          {/* Recent Folders */}
-          <Box flex="1" width="100%">
-            {" "}
-            {/* Added width="100%" here */}
-            <SimpleGrid
-              columns={{ base: 1, sm: 2, md: 3, lg: 4 }} // Ensures 4 columns on large screens
-              spacing={4}
-              mt={4}
-              gap={4}
-            >
-              {folders.slice(0, 4).map(
-                (
-                  folder,
-                  index // Slices to 4 items
-                ) => (
-                  <Box
-                    key={index}
-                    p={6}
-                    bg={folder.color}
-                    borderRadius="lg"
-                    position="relative"
-                    width="100%"
-                    boxShadow="md"
-                    textAlign="left"
-                  >
-                    <IoFolderSharp color="#53b1ffff" mb="4" size={30} />
-
-                    <Text fontWeight="bold" fontSize="lg" mt={5}>
-                      {folder.title}
-                    </Text>
-                    <Text fontSize="12px" mt={1}>
-                      {folder.date}
-                    </Text>
-                    <Button
-                      size="sm"
-                      position="absolute"
-                      top={3}
-                      right={3}
-                      aria-label="More"
-                      variant="ghost"
-                      _hover={{ bg: "transparent" }}
-                    >
-                      <FiMoreHorizontal size={20} />
-                    </Button>
-                  </Box>
-                )
-              )}
-            </SimpleGrid>
-          </Box>
-
-          {/* Add New Folder Button */}
-          <Box
-            border="2px dashed gray"
-            borderRadius="lg"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            w={{ base: "100%", md: "120px", lg: "120px" }} // Adjusted width for responsiveness
-            h={{ base: "auto", md: "100%" }}
-            minH={{ base: "100px", md: "auto" }}
-            p={4}
-            _hover={{ borderColor: "blue.300", cursor: "pointer" }}
-            flexShrink={0}
-            onClick={onFolderModalOpen} // Open modal on click
-          >
-            <FaFileCirclePlus size={32} color="gray" />
-
-            <Text color="gray.400" mt={3} fontSize="sm" textAlign={"center"}>
-              Add New Folder
-            </Text>
-          </Box>
-        </Box>
-
-        {/* Add New Folder Modal */}
-        <Modal isOpen={isFolderModalOpen} onClose={onFolderModalClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add New Folder</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <FormControl>
-                <FormLabel>Folder Title</FormLabel>
-                <Input
-                  placeholder="Enter folder title"
-                  value={newFolderTitle}
-                  onChange={(e) => setNewFolderTitle(e.target.value)}
-                />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={onFolderModalClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="blue" ml={3} onClick={handleAddFolder}>
-                Create Folder
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </Box>
-    );
   };
 
   const renderNoteContent = () => {
@@ -290,7 +173,7 @@ const Folders = () => {
           </Box>
 
           {/* Add New Note Button */}
-          <Box
+          {/*        <Box
             border="2px dashed gray"
             borderRadius="lg"
             display="flex"
@@ -310,11 +193,11 @@ const Folders = () => {
             <Text color="gray.400" mt={3} fontSize="sm" textAlign={"center"}>
               Add New Note
             </Text>
-          </Box>
+          </Box> */}
         </Box>
 
         {/* Add New Note Modal */}
-        <Modal isOpen={isNoteModalOpen} onClose={onNoteModalClose}>
+        {/*  <Modal isOpen={isNoteModalOpen} onClose={onNoteModalClose}>
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>Add New Note</ModalHeader>
@@ -347,7 +230,7 @@ const Folders = () => {
               </Button>
             </ModalFooter>
           </ModalContent>
-        </Modal>
+        </Modal> */}
       </Box>
     );
   };
@@ -355,12 +238,12 @@ const Folders = () => {
   return (
     <Box p={6} bg="gray.50" minH="100vh">
       {/* Centered Heading */}
-      <Heading mb={4} textAlign="center">
+      {/*     <Heading mb={4} textAlign="center">
         Recent Folders
-      </Heading>
+      </Heading> */}
 
       {/* Centered ButtonGroup */}
-      <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
+      {/*  <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
             key={tab}
@@ -372,9 +255,9 @@ const Folders = () => {
             {tab}
           </Button>
         ))}
-      </ButtonGroup>
-
-      {renderFolderContent()}
+      </ButtonGroup> */}
+      {/* 
+      {renderFolderContent()} */}
 
       {/* Centered Heading */}
       <Heading mt={10} mb={4} textAlign="center">
