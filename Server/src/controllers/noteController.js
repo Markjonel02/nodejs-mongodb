@@ -21,7 +21,7 @@ exports.getNotes = async (req, res) => {
   try {
     // Corrected to fetch ALL notes as there's no user ID to filter by yet.
     // .sort({ createdAt: -1 }) is optional, but good for showing newest notes first.
-    const notes = await Note.find({}).sort({ createdAt: -1 });
+    const notes = await Addnote.find({}).sort({ createdAt: -1 });
     res.status(200).json(notes);
   } catch (error) {
     console.error("Error fetching notes:", error);

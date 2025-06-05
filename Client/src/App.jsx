@@ -6,7 +6,10 @@ import SideNavigationBar from "./components/SideNavigationBar";
 import Folders from "./components/Folders";
 import TestFolders from "./components/TestFolder";
 import TestNav from "./components/TestNav";
+import { useState } from "react";
 function App() {
+  const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
+
   return (
     <>
       <Box>
@@ -16,9 +19,13 @@ function App() {
         <MainContainer>
           <Box display="flex" width="100%" height="100vh">
             {/* <SideNavigationBar /> */}
-            <TestNav></TestNav>
-            <Box>
-              <TestFolders />
+            <TestNav
+              onNoteAdded={() => {
+                setShouldRefetchNotes((prev) => !prev);
+              }}
+            ></TestNav>
+            <Box width="100%">
+              <TestFolders shouldRefetchNotes={shouldRefetchNotes} />
             </Box>
           </Box>
         </MainContainer>
