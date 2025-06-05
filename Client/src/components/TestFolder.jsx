@@ -26,7 +26,7 @@ const Folders = ({ shouldRefetchNotes }) => {
     setError(null);
 
     try {
-      const response = await axios.get("http://localhost:5000/api/notes");
+      const response = await axios.get("http://localhost:5000/api/getnotes");
       setNotes(response.data);
     } catch (err) {
       console.error("Error fetching notes:", err);

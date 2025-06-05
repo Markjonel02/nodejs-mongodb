@@ -28,3 +28,25 @@ exports.getNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+
+exports.delNotes = async (req,res) => {
+  
+  try {
+    const {id} = req.params
+
+    if(!id){
+    return res.status(400).json({message:"Note Id is Required!"})
+    }    // Corrected to fetch ALL notes as there's no user ID to filter by yet.
+    // .sort({ createdAt: -1 }) is optional, but good for showing newest notes first.
+    const deleteNote = await Addnote.deleteOne({_id:id})
+ if (!deleteNote) {
+  return res.status(404).json({message:"Notes not Found!"})
+ }
+  //if success ({message:"Notes deleted Successfully!"})
+  } catch (error) {
+  return res.staus(200).json
+    console.error("Error Deleting notes:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
