@@ -21,9 +21,14 @@ app.use(express.json());
 const noteRoutes = require("./routes/noteRoutes");
 app.use("/api", noteRoutes); // Prefix all note routes with /api/notes
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
+
+app.delete("/api", (req,res)=>{
+res.send("Deleted Successfully!")
+})
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
