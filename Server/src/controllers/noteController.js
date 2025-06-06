@@ -28,25 +28,54 @@ exports.getNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
-exports.delNotes = async (req,res) => {
-  
+exports.delNotes = async (req, res) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
 
-    if(!id){
-    return res.status(400).json({message:"Note Id is Required!"})
-    }    // Corrected to fetch ALL notes as there's no user ID to filter by yet.
-    // .sort({ createdAt: -1 }) is optional, but good for showing newest notes first.
-    const deleteNote = await Addnote.deleteOne({_id:id})
- if (!deleteNote) {
-  return res.status(404).json({message:"Notes not Found!"})
- }
-  //if success ({message:"Notes deleted Successfully!"})
+    if (!id) {
+      return res.status(400).json({ message: "Note ID is Required!" });
+    }
+
+    const deleteNote = await Addnote.deleteOne({ _id: id });
+
+    // Check if any document was actually deleted
+    if (deleteNote.deletedCount === 0) {
+      return res.status(404).json({ message: "Note not Found!" });
+    }
+
+    // If successful, send a success message.
+    return res.status(200).json({ message: "Note deleted Successfully!" });
   } catch (error) {
-  return res.staus(200).json
     console.error("Error Deleting notes:", error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+
+exports.updateNotes = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the note ID from request parameters
+    const { title, notes, color } = req.body; // Get updated fields from request body
+
+    if (!id) {
+      return res.status(400).json({ message: "Note ID is required!" });
+    }
+
+    const update = await Addnote.updateOne(
+      { _id: id }, // Find the document by ID
+      { $set: { title, notes, color } } // Update fields using $set
+    );
+
+    if (update.modifiedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Note not found or no changes made!" });
+    }
+
+    return res.status(200).json({ message: "Note updated successfully!" });
+  } catch (error) {
+    console.error(`Error updating notes: ${error}`);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
