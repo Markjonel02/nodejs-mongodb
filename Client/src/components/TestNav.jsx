@@ -17,15 +17,41 @@ import {
 } from "@chakra-ui/react";
 
 // Importing icons from react-icons/ci and react-icons/md
-import { CiCalendar, CiFileOn, CiTrash } from "react-icons/ci";
+import { CiCalendar, CiFileOn, CiTrash, CiHeart } from "react-icons/ci";
 import { MdAssignmentAdd } from "react-icons/md";
 // Using MdOutlineChevronLeft and MdOutlineChevronRight from react-icons/md as they are more appropriate
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
 import { HamburgerIcon } from "@chakra-ui/icons"; // Hamburger icon from Chakra UI
-
 import { motion } from "framer-motion"; // For smooth animations
+import video from "/9zre4m7JbH74ruby0Q.mp4";
 import axios from "axios"; // For making HTTP requests to your backend
 
+const sidebarLinks = [
+  { label: "Calendar", icon: CiCalendar },
+  { label: "Archive", icon: CiFileOn },
+  { label: "Trash", icon: CiTrash },
+  { label: "Favorites", icon: CiHeart },
+];
+
+// Array of colors for note selection
+export const colors = [
+  "yellow.200",
+  "#FFD6BA",
+  "red.100",
+  "#9EC6F3",
+  "#FFDCDC",
+  "#D5C7A3",
+  "#fab6ceff", // Custom color 1
+  "#c4f5d3ff", // Custom color 2
+  "#BFECFF",
+  "#CDC1FF",
+  "#E5D9F2",
+  "#F8EDE3",
+  "#E0E5B6",
+  "#F19ED2",
+  "#F8F3D9",
+  "#F9F5F6",
+];
 // Define MotionBox for animating the new note form
 const MotionBox = motion(Box);
 
@@ -140,18 +166,6 @@ const Sidebar = ({ onNoteAdded }) => {
       });
     }
   };
-
-  // Array of colors for note selection
-  const colors = [
-    "yellow.200",
-    "blue.400",
-    "red.100",
-    "green.500",
-    "yellow.500",
-    "blackAlpha.500",
-    "#fab6ceff", // Custom color 1
-    "#c4f5d3ff", // Custom color 2
-  ];
 
   return (
     <>
@@ -276,11 +290,17 @@ const Sidebar = ({ onNoteAdded }) => {
                         size="24px"
                         bg={color}
                         cursor="pointer"
-                        border={
-                          selectedColor === color
-                            ? "2px solid blue.500" // Highlight selected color
-                            : "2px solid transparent"
+                        border="2px solid transparent"
+                        borderColor={
+                          selectedColor === color ? "blue.500" : "transparent"
                         }
+                        _focus={{
+                          outline: "2px solid blue.500",
+                          boxShadow: "0 0 5px blue.500",
+                        }}
+                        _active={{
+                          borderColor: "blue.500",
+                        }}
                         onClick={() => setSelectedColor(color)}
                       />
                     ))}
@@ -306,57 +326,26 @@ const Sidebar = ({ onNoteAdded }) => {
 
           {/* Navigation Links with Tooltips */}
           <VStack align="start" spacing={4} color="gray.400" mt={5}>
-            {/* Calendar Link */}
-            <Tooltip
-              label="Calendar"
-              // Tooltip is disabled if the sidebar is NOT collapsed (i.e., it's expanded)
-              isDisabled={!actualCollapsedState}
-              hasArrow // Adds a small arrow to the tooltip
-              placement="right" // Positions the tooltip to the right of the icon
-            >
-              <HStack
-                spacing={2}
-                cursor="pointer"
-                onClick={() => isSmallScreen && setIsOverlayOpen(false)} // Close overlay on click for small screens
+            {sidebarLinks.map(({ label, icon: Icon }) => (
+              <Tooltip
+                key={label}
+                label={label}
+                isDisabled={!actualCollapsedState}
+                hasArrow
+                placement="right"
               >
-                <CiCalendar size={25} />
-                {!actualCollapsedState && <Text>Calendar</Text>}
-              </HStack>
-            </Tooltip>
-
-            {/* Archive Link */}
-            <Tooltip
-              label="Archive"
-              isDisabled={!actualCollapsedState}
-              hasArrow
-              placement="right"
-            >
-              <HStack
-                spacing={2}
-                cursor="pointer"
-                onClick={() => isSmallScreen && setIsOverlayOpen(false)}
-              >
-                <CiFileOn size={25} />
-                {!actualCollapsedState && <Text>Archive</Text>}
-              </HStack>
-            </Tooltip>
-
-            {/* Trash Link */}
-            <Tooltip
-              label="Trash"
-              isDisabled={!actualCollapsedState}
-              hasArrow
-              placement="right"
-            >
-              <HStack
-                spacing={2}
-                cursor="pointer"
-                onClick={() => isSmallScreen && setIsOverlayOpen(false)}
-              >
-                <CiTrash size={25} />
-                {!actualCollapsedState && <Text>Trash</Text>}
-              </HStack>
-            </Tooltip>
+                <HStack
+                  spacing={2}
+                  cursor="pointer"
+                  _hover={{ color: "gray.600", transform: "scale(1.05)" }}
+                  transition="all 0.2s"
+                  onClick={() => isSmallScreen && setIsOverlayOpen(false)}
+                >
+                  <Icon size={25} />
+                  {!actualCollapsedState && <Text>{label}</Text>}
+                </HStack>
+              </Tooltip>
+            ))}
           </VStack>
         </VStack>
 
@@ -369,17 +358,9 @@ const Sidebar = ({ onNoteAdded }) => {
                 Want to access unlimited notes taking experience & lots of
                 feature?
               </Text>
-              <Button
-                size="sm"
-                bg="blue.600"
-                width="100%"
-                mb={4}
-                color="white"
-                _hover={{ bg: "blue.700" }} // Hover effect
-                borderRadius="md" // Added rounded corners
-              >
-                Upgrade pro
-              </Button>
+              <video width="750" height="500" muted loop autoPlay>
+                <source src={video} type="video/mp4" />
+              </video>
             </>
           )}
           <Box
