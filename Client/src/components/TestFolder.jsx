@@ -36,12 +36,13 @@ import { FiMoreHorizontal } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
-
+import { memo } from "react";
 import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
 import { MdOutlineFavoriteBorder } from "react-icons/md";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
+import { color } from "framer-motion";
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
@@ -116,7 +117,6 @@ const Folders = ({ shouldRefetchNotes }) => {
     setUpdatedColor(note.color);
     onUpdateOpen(); // Open the update modal
   };
-
   const confirmDelete = async () => {
     if (!noteToDelete) return;
 
@@ -129,34 +129,28 @@ const Folders = ({ shouldRefetchNotes }) => {
         `http://localhost:5000/api/delnotes/${noteToDelete}`
       );
 
-      if (
-        response.status === 200 &&
-        response.data.message === "Note deleted Successfully!"
-      ) {
+      // Ensure we check the HTTP status for success instead of relying on the message
+      if (response.status === 200) {
         setNotes((prevNotes) =>
           prevNotes.filter((note) => note._id !== noteToDelete)
         );
         displayToast(
-          "Note Deleted",
-          "Note has been successfully deleted.",
+          "Note Moved to Trash",
+          response.data.message || "Note has been successfully moved to Trash.",
           "success"
         );
-        fetchNotes(); // Re-fetch notes to ensure UI is perfectly in sync
+        fetchNotes(); // Ensure UI is perfectly in sync
       } else {
-        setError(response.data.message || "Failed to delete note.");
-        displayToast(
-          "Deletion Failed",
-          response.data.message || "Failed to delete the note.",
-          "error"
+        throw new Error(
+          response.data.message || "Failed to move note to trash."
         );
       }
     } catch (err) {
-      console.error("Error deleting note:", err);
+      console.error("Error moving note to Trash:", err);
       const errorMessage =
-        err.response?.data?.message ||
-        "Failed to delete note. Please try again later.";
+        err.response?.data?.message || "Failed to move note to Trash.";
       setError(errorMessage);
-      displayToast("Deletion Failed", errorMessage, "error");
+      displayToast("Error", errorMessage, "error");
     } finally {
       setLoading(false);
       setNoteToDelete(null);
@@ -290,7 +284,7 @@ const Folders = ({ shouldRefetchNotes }) => {
         >
           <Box flex="1" width="100%">
             <SimpleGrid
-              columns={{ base: 1, sm: 2, md: 3, lg: 4 }}
+              columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
               spacing={4}
               mt={4}
               gap={4}
@@ -401,7 +395,13 @@ const Folders = ({ shouldRefetchNotes }) => {
               <Button ref={cancelRef} onClick={onDeleteClose}>
                 Cancel
               </Button>
-              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+              <Button
+                bg={"#DA6C6C"}
+                onClick={confirmDelete}
+                ml={3}
+                color={"white"}
+                _hover={{ color: "black", bg: "gray.100" }}
+              >
                 Delete
               </Button>
             </AlertDialogFooter>
@@ -477,4 +477,4 @@ const Folders = ({ shouldRefetchNotes }) => {
   );
 };
 
-export default Folders;
+export default memo(Folders);

@@ -1,5 +1,5 @@
 const Addnote = require("../models/Addnote");
-
+const Trashnotes = require("../models/Trash");
 // Create a new note
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
@@ -36,20 +36,31 @@ exports.delNotes = async (req, res) => {
       return res.status(400).json({ message: "Note ID is Required!" });
     }
 
-    const deleteNote = await Addnote.deleteOne({ _id: id });
+    //find notes before deleting
+    const noteDelete = await Addnote.findById(id);
+    if (!noteDelete) {
+      return res.status(404).json({ message: "Note could note be Found!" });
+    }
+    //mobe and create collection
+    await Trashnotes.create(noteDelete.toObject());
+
+    await Addnote.findByIdAndDelete(id);
 
     // Check if any document was actually deleted
-    if (deleteNote.deletedCount === 0) {
+    if (noteDelete === 0) {
       return res.status(404).json({ message: "Note not Found!" });
     }
 
     // If successful, send a success message.
-    return res.status(200).json({ message: "Note deleted Successfully!" });
+    return res
+      .status(200)
+      .json({ message: "Note moved to trash Successfully!" });
   } catch (error) {
     console.error("Error Deleting notes:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.updateNotes = async (req, res) => {
   try {
     const { id } = req.params; // Get the note ID from request parameters
