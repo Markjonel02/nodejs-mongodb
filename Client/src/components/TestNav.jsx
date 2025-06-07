@@ -25,6 +25,7 @@ import { HamburgerIcon } from "@chakra-ui/icons"; // Hamburger icon from Chakra 
 import { motion } from "framer-motion"; // For smooth animations
 import video from "/9zre4m7JbH74ruby0Q.mp4";
 import axios from "axios"; // For making HTTP requests to your backend
+import { colors } from "../utils/colors";
 
 const sidebarLinks = [
   { label: "Calendar", icon: CiCalendar },
@@ -34,24 +35,7 @@ const sidebarLinks = [
 ];
 
 // Array of colors for note selection
-export const colors = [
-  "yellow.200",
-  "#FFD6BA",
-  "red.100",
-  "#9EC6F3",
-  "#FFDCDC",
-  "#D5C7A3",
-  "#fab6ceff", // Custom color 1
-  "#c4f5d3ff", // Custom color 2
-  "#BFECFF",
-  "#CDC1FF",
-  "#E5D9F2",
-  "#F8EDE3",
-  "#E0E5B6",
-  "#F19ED2",
-  "#F8F3D9",
-  "#F9F5F6",
-];
+
 // Define MotionBox for animating the new note form
 const MotionBox = motion(Box);
 
@@ -354,10 +338,6 @@ const Sidebar = ({ onNoteAdded }) => {
           {/* Upgrade Pro section, visible only when sidebar is not collapsed */}
           {!actualCollapsedState && (
             <>
-              <Text fontSize="xs" color="gray.500" mb={2}>
-                Want to access unlimited notes taking experience & lots of
-                feature?
-              </Text>
               <video width="750" height="500" muted loop autoPlay>
                 <source src={video} type="video/mp4" />
               </video>
