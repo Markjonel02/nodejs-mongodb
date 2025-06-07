@@ -54,38 +54,39 @@ exports.delNotes = async (req, res) => {
     // If successful, send a success message.
     return res
       .status(200)
-      .json({ message: "Note moved to trash Successfully!" });
+      .json({ message: "Successfully deleted and moved to trash!" });
   } catch (error) {
     console.error("Error Deleting notes:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 exports.updateNotes = async (req, res) => {
   try {
-    const { id } = req.params; // Get the note ID from request parameters
-    const { title, notes, color } = req.body; // Get updated fields from request body
+    const { id } = req.params;
+    const { title, notes, color } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: "Note ID is required!" });
     }
 
-    const update = await Addnote.updateOne(
-      { _id: id }, // Find the document by ID
-      { $set: { title, notes, color } } // Update fields using $set
+    // Find and update the note
+    const updatedNote = await Addnote.findOneAndUpdate(
+      { _id: id },
+      { $set: { title, notes, color } },
+      { new: true, runValidators: true } // Returns the updated document
     );
 
-    if (update.modifiedCount === 0) {
-      // This means the note was not found or no fields were actually changed
-      return res
-        .status(404)
-        .json({ message: "Note not found or no changes made!" });
+    if (!updatedNote) {
+      return res.status(404).json({ message: "Note not found!" });
     }
 
-    // Success: Return a 200 status with a success message
-    return res.status(200).json({ message: "Note updated successfully!" });
+    return res
+      .status(200)
+      .json({ message: "Note updated successfully!", updatedNote });
   } catch (error) {
     console.error(`Error updating notes: ${error}`);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.archivedNotes = async (res, req) => {};
