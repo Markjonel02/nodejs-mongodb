@@ -135,7 +135,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           prevNotes.filter((note) => note._id !== noteToDelete)
         );
         displayToast(
-          "Note Moved to Trash",
+          "Note Deleted!",
           response.data.message || "Note has been successfully moved to Trash.",
           "success"
         );
@@ -180,13 +180,28 @@ const Folders = ({ shouldRefetchNotes }) => {
     // and then re-fetch notes. For now, it's just a toast and a re-fetch.
     fetchNotes();
   };
-
   const confirmUpdate = async () => {
     if (!noteToUpdate) return;
 
     setLoading(true);
     setError(null);
     onUpdateClose(); // Close the update modal
+
+    // Check if any modifications were made
+    const hasChanges =
+      updatedTitle !== noteToUpdate.title ||
+      updatedNotes !== noteToUpdate.notes ||
+      updatedColor !== noteToUpdate.color;
+
+    if (!hasChanges) {
+      displayToast(
+        "No Changes Detected",
+        "You didn't modify anything.",
+        "warning"
+      );
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await axios.put(
