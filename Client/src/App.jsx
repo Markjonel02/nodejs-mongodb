@@ -17,7 +17,7 @@ function App() {
           <TopNavigation />
         </header>
         <MainContainer>
-          <Box display="flex" width="100%" height="100vh">
+          <Box display="flex" width="100%">
             {/* <SideNavigationBar /> */}
             <TestNav
               onNoteAdded={() => {

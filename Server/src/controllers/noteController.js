@@ -50,8 +50,6 @@ exports.delNotes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 exports.updateNotes = async (req, res) => {
   try {
     const { id } = req.params; // Get the note ID from request parameters
@@ -67,15 +65,16 @@ exports.updateNotes = async (req, res) => {
     );
 
     if (update.modifiedCount === 0) {
+      // This means the note was not found or no fields were actually changed
       return res
         .status(404)
         .json({ message: "Note not found or no changes made!" });
     }
 
+    // Success: Return a 200 status with a success message
     return res.status(200).json({ message: "Note updated successfully!" });
   } catch (error) {
     console.error(`Error updating notes: ${error}`);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-

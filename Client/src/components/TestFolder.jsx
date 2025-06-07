@@ -28,9 +28,8 @@ import {
   FormLabel,
   Input,
   Textarea,
-  // Removed Select
-  HStack, // Import HStack
-  Circle, // Import Circle
+  HStack,
+  Circle,
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
@@ -38,34 +37,11 @@ import { useState, useEffect, useRef } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
 
+import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
 import { MdOutlineFavoriteBorder } from "react-icons/md";
-
-// Define your colors array (it's good practice to keep this in a separate file if it grows)
-export const colors = [
-  "#fcfcd5", // Yellow (matching your original option values)
-  "#d5fcfc", // Cyan
-  "#fcd5fc", // Pink
-  "#d5fcd5", // Light Green
-  "#fcd5d5", // Light Red
-  "yellow.200", // Chakra UI semantic colors
-  "#FFD6BA",
-  "red.100",
-  "#9EC6F3",
-  "#FFDCDC",
-  "#D5C7A3",
-  "#fab6ceff", // Custom color 1
-  "#c4f5d3ff", // Custom color 2
-  "#BFECFF",
-  "#CDC1FF",
-  "#E5D9F2",
-  "#F8EDE3",
-  "#E0E5B6",
-  "#F19ED2",
-  "#F8F3D9",
-  "#F9F5F6",
-];
+import { colors } from "../utils/colors"; // Assuming colors are defined here
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
@@ -74,7 +50,6 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [error, setError] = useState(null);
   const toast = useToast();
 
-  // State and ref for the delete confirmation modal
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
@@ -83,7 +58,6 @@ const Folders = ({ shouldRefetchNotes }) => {
   const cancelRef = useRef();
   const [noteToDelete, setNoteToDelete] = useState(null);
 
-  // State and disclosure for the update modal
   const {
     isOpen: isUpdateOpen,
     onOpen: onUpdateOpen,
@@ -92,7 +66,7 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [noteToUpdate, setNoteToUpdate] = useState(null);
   const [updatedTitle, setUpdatedTitle] = useState("");
   const [updatedNotes, setUpdatedNotes] = useState("");
-  const [updatedColor, setUpdatedColor] = useState(""); // This now holds the selected color string
+  const [updatedColor, setUpdatedColor] = useState("");
 
   const displayToast = (title, description, status) => {
     toast({
@@ -135,10 +109,11 @@ const Folders = ({ shouldRefetchNotes }) => {
   };
 
   const handleUpdateNote = (note) => {
+    // This function is correctly used to prepare the modal with the note's current data
     setNoteToUpdate(note);
     setUpdatedTitle(note.title);
     setUpdatedNotes(note.notes);
-    setUpdatedColor(note.color); // Set the current color of the note
+    setUpdatedColor(note.color);
     onUpdateOpen(); // Open the update modal
   };
 
@@ -166,6 +141,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           "Note has been successfully deleted.",
           "success"
         );
+        fetchNotes(); // Re-fetch notes to ensure UI is perfectly in sync
       } else {
         setError(response.data.message || "Failed to delete note.");
         displayToast(
@@ -176,17 +152,11 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
     } catch (err) {
       console.error("Error deleting note:", err);
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-        displayToast("Deletion Failed", err.response.data.message, "error");
-      } else {
-        setError("Failed to delete note. Please try again later.");
-        displayToast(
-          "Deletion Failed",
-          "Failed to delete the note. Please try again.",
-          "error"
-        );
-      }
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to delete note. Please try again later.";
+      setError(errorMessage);
+      displayToast("Deletion Failed", errorMessage, "error");
     } finally {
       setLoading(false);
       setNoteToDelete(null);
@@ -200,6 +170,9 @@ const Folders = ({ shouldRefetchNotes }) => {
       "Note has been successfully archived.",
       "info"
     );
+    // You might want to implement actual archiving logic here (e.g., API call)
+    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
+    fetchNotes();
   };
 
   const handleFavoriteNote = async (noteId) => {
@@ -209,6 +182,9 @@ const Folders = ({ shouldRefetchNotes }) => {
       "Note has been added to favorites.",
       "success"
     );
+    // You might want to implement actual favoriting logic here (e.g., API call)
+    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
+    fetchNotes();
   };
 
   const confirmUpdate = async () => {
@@ -224,7 +200,7 @@ const Folders = ({ shouldRefetchNotes }) => {
         {
           title: updatedTitle,
           notes: updatedNotes,
-          color: updatedColor, // Send the selected color
+          color: updatedColor,
         }
       );
 
@@ -232,50 +208,30 @@ const Folders = ({ shouldRefetchNotes }) => {
         response.status === 200 &&
         response.data.message === "Note updated successfully!"
       ) {
-        setNotes((prevNotes) =>
-          prevNotes.map((note) =>
-            note._id === noteToUpdate._id
-              ? {
-                  ...note,
-                  title: updatedTitle,
-                  notes: updatedNotes,
-                  color: updatedColor,
-                }
-              : note
-          )
-        );
         displayToast(
           "Note Updated",
           "Note has been successfully updated.",
           "success"
         );
+        await fetchNotes(); // Re-fetch the latest data from the server
       } else {
-        setError(response.data.message || "Failed to update note.");
-        displayToast(
-          "Update Failed",
-          response.data.message || "Failed to update the note.",
-          "error"
-        );
+        const errorMessage =
+          response.data.message || "Failed to update the note.";
+        displayToast("Update Failed", errorMessage, "error");
       }
     } catch (err) {
       console.error("Error updating note:", err);
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-        displayToast("Update Failed", err.response.data.message, "error");
-      } else {
-        setError("Failed to update note. Please try again later.");
-        displayToast(
-          "Update Failed",
-          "Failed to update the note. Please try again.",
-          "error"
-        );
-      }
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to update note. Please try again later.";
+      setError(errorMessage);
+      displayToast("Update Failed", errorMessage, "error");
     } finally {
       setLoading(false);
-      setNoteToUpdate(null); // Clear the note to update
+      setNoteToUpdate(null);
       setUpdatedTitle("");
       setUpdatedNotes("");
-      setUpdatedColor(""); // Clear selected color
+      setUpdatedColor("");
     }
   };
 
@@ -298,9 +254,26 @@ const Folders = ({ shouldRefetchNotes }) => {
 
     if (notes.length === 0) {
       return (
-        <Text textAlign="center" mt={8}>
-          No notes found. Start by adding a new one!
-        </Text>
+        <>
+          <Text textAlign="center" mt={20} fontWeight={500} fontSize={20}>
+            No notes found. Start by adding a new one!
+          </Text>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            w="200px"
+            h="auto"
+            mx="auto" // Centers the Box itself
+            mt={50}
+          >
+            <img
+              src={book}
+              alt="book"
+              style={{ display: "block", margin: "auto" }}
+            />
+          </Box>
+        </>
       );
     }
 
@@ -326,7 +299,7 @@ const Folders = ({ shouldRefetchNotes }) => {
                 <Box
                   key={note._id || index}
                   p={6}
-                  bg={note.color}
+                  bg={note.color} // Use the note's color here
                   borderRadius="lg"
                   position="relative"
                   width="100%"
@@ -459,7 +432,7 @@ const Folders = ({ shouldRefetchNotes }) => {
               />
             </FormControl>
 
-            {/* Replaced Select with HStack of Circles for color selection */}
+            {/* Color selection using Circles */}
             <FormControl id="noteColor" mb={4}>
               <FormLabel>Color</FormLabel>
               <HStack spacing={2} align="start" flexWrap="wrap">
