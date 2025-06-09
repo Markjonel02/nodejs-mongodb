@@ -1,5 +1,6 @@
 const Addnote = require("../models/Addnote");
 const Trashnotes = require("../models/Trash");
+const Archived = require("../models/Archived");
 // Create a new note
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
@@ -89,4 +90,33 @@ exports.updateNotes = async (req, res) => {
   }
 };
 
-exports.archivedNotes = async (res, req) => {};
+exports.archivedNotes = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Note ID is Required!" });
+    }
+
+    //find notes before deleting
+    const noteArchive = await Addnote.findById(id);
+    if (!noteArchive) {
+      return res.status(404).json({ message: "Note could note be Found!" });
+    }
+    //mobe and create collection
+    await Archived.create(noteArchive.toObject());
+
+    await Addnote.findByIdAndDelete(id);
+
+    // Check if any document was actually deleted
+    if (noteArchive === 0) {
+      return res.status(404).json({ message: "Note not Found!" });
+    }
+
+    // If successful, send a success message.
+    return res.status(200).json({ message: "Successfully moved to Archived!" });
+  } catch (error) {
+    console.error("Error Deleting notes:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};

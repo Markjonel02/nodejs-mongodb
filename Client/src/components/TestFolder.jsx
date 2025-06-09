@@ -33,16 +33,14 @@ import {
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
-import { memo } from "react";
 import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
 import { MdOutlineFavoriteBorder } from "react-icons/md";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
-import { color } from "framer-motion";
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
@@ -51,6 +49,7 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [error, setError] = useState(null);
   const toast = useToast();
 
+  // State and disclosure for Delete AlertDialog
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
@@ -59,6 +58,16 @@ const Folders = ({ shouldRefetchNotes }) => {
   const cancelRef = useRef();
   const [noteToDelete, setNoteToDelete] = useState(null);
 
+  // State and disclosure for Archive AlertDialog
+  const {
+    isOpen: isArchiveOpen,
+    onOpen: onArchiveOpen,
+    onClose: onArchiveClose,
+  } = useDisclosure();
+  const archiveCancelRef = useRef(); // Separate ref for archive dialog
+  const [noteToArchive, setNoteToArchive] = useState(null);
+
+  // State and disclosure for Update Modal
   const {
     isOpen: isUpdateOpen,
     onOpen: onUpdateOpen,
@@ -104,19 +113,28 @@ const Folders = ({ shouldRefetchNotes }) => {
     fetchNotes();
   }, [shouldRefetchNotes]);
 
+  // Handler for opening the delete confirmation dialog
   const handleDeleteNote = (noteId) => {
     setNoteToDelete(noteId);
     onDeleteOpen();
   };
 
+  // Handler for opening the archive confirmation dialog
+  const handleArchiveNoteClick = (noteId) => {
+    setNoteToArchive(noteId);
+    onArchiveOpen();
+  };
+
+  // Handler for opening the update modal
   const handleUpdateNote = (note) => {
-    // This function is correctly used to prepare the modal with the note's current data
     setNoteToUpdate(note);
     setUpdatedTitle(note.title);
     setUpdatedNotes(note.notes);
     setUpdatedColor(note.color);
-    onUpdateOpen(); // Open the update modal
+    onUpdateOpen();
   };
+
+  // Confirmation logic for deleting a note
   const confirmDelete = async () => {
     if (!noteToDelete) return;
 
@@ -129,7 +147,6 @@ const Folders = ({ shouldRefetchNotes }) => {
         `http://localhost:5000/api/delnotes/${noteToDelete}`
       );
 
-      // Ensure we check the HTTP status for success instead of relying on the message
       if (response.status === 200) {
         setNotes((prevNotes) =>
           prevNotes.filter((note) => note._id !== noteToDelete)
@@ -157,16 +174,48 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  const handleArchiveNote = async (noteId) => {
-    console.log("Archiving note with ID:", noteId);
-    displayToast(
-      "Note Archived",
-      "Note has been successfully archived.",
-      "info"
-    );
-    // You might want to implement actual archiving logic here (e.g., API call)
-    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
-    fetchNotes();
+  // Confirmation logic for archiving a note
+  const confirmArchive = async () => {
+    if (!noteToArchive) return;
+
+    setLoading(true);
+    setError(null);
+    onArchiveClose();
+
+    try {
+      // Ensure noteToArchive has an _id property and use it in the URL
+
+      const response = await axios.delete(
+        `http://localhost:5000/api/archivednotes/${noteToArchive}`
+      );
+      if (response.status === 200) {
+        setNotes((prevNotes) =>
+          prevNotes.filter((note) => note._id !== noteToArchive)
+        );
+        displayToast(
+          "Note Archived!",
+          response.data.message ||
+            "Note has been successfully moved to Archived.",
+          "info"
+        );
+        fetchNotes(); // Re-fetch notes to update the UI (e.g., remove archived note)
+      } else {
+        // This part might be less likely if the server sends a 5xx or 4xx for errors,
+        // but it's good to have.
+        throw new Error(response.data.message || "Failed to archive the note.");
+      }
+    } catch (err) {
+      console.error("Error archiving note:", err);
+      // Access error message from err.response.data if available
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to archive note. Please try again later.";
+      setError(errorMessage);
+      displayToast("Error", errorMessage, "error");
+    } finally {
+      setLoading(false);
+      setNoteToArchive(null); // Clear the note after attempt
+    }
   };
 
   const handleFavoriteNote = async (noteId) => {
@@ -180,6 +229,7 @@ const Folders = ({ shouldRefetchNotes }) => {
     // and then re-fetch notes. For now, it's just a toast and a re-fetch.
     fetchNotes();
   };
+
   const confirmUpdate = async () => {
     if (!noteToUpdate) return;
 
@@ -350,7 +400,11 @@ const Folders = ({ shouldRefetchNotes }) => {
                       <MenuItem onClick={() => handleDeleteNote(note._id)}>
                         <Icon as={IoTrashBinOutline} mr={2} /> Delete
                       </MenuItem>
-                      <MenuItem onClick={() => handleArchiveNote(note._id)}>
+                      <MenuItem
+                        onClick={() => handleArchiveNoteClick(note._id)}
+                      >
+                        {" "}
+                        {/* Changed here */}
                         <Icon as={CiFileOff} mr={2} /> Archive
                       </MenuItem>
                       <MenuItem onClick={() => handleFavoriteNote(note._id)}>
@@ -418,6 +472,39 @@ const Folders = ({ shouldRefetchNotes }) => {
                 _hover={{ color: "black", bg: "gray.100" }}
               >
                 Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      {/* Archive Confirmation AlertDialog */}
+      <AlertDialog
+        isOpen={isArchiveOpen}
+        leastDestructiveRef={archiveCancelRef}
+        onClose={onArchiveClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Archive Note
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to archive this note? It will be moved to
+              your archived notes.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={archiveCancelRef} onClick={onArchiveClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue" // You can choose your desired color scheme
+                onClick={confirmArchive}
+                ml={3}
+              >
+                Archive
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
