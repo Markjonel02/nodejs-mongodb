@@ -30,26 +30,36 @@ import {
   Textarea,
   HStack,
   Circle,
+  Flex,
+  Spacer,
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef, memo, useMemo } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
 import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
-import { MdOutlineFavoriteBorder, MdOutlineFavorite } from "react-icons/md"; // Import filled favorite icon
-import { colors } from "../utils/colors"; // Assuming colors are defined here
+import { MdOutlineFavoriteBorder, MdOutlineFavorite } from "react-icons/md";
+import { colors } from "../utils/colors";
+import { ChevronDownIcon } from "@chakra-ui/icons";
+
+// Helper function to get initial state from localStorage
+const getInitialSortBy = () => {
+  const storedSortBy = localStorage.getItem("noteSortBy");
+  return storedSortBy ? storedSortBy : "dateDesc"; // Default to "dateDesc" if no value is stored
+};
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Initialize sortBy using the helper function
+  const [sortBy, setSortBy] = useState(getInitialSortBy);
   const toast = useToast();
 
-  // State and disclosure for Delete AlertDialog
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
@@ -58,16 +68,14 @@ const Folders = ({ shouldRefetchNotes }) => {
   const cancelRef = useRef();
   const [noteToDelete, setNoteToDelete] = useState(null);
 
-  // State and disclosure for Archive AlertDialog
   const {
     isOpen: isArchiveOpen,
     onOpen: onArchiveOpen,
     onClose: onArchiveClose,
   } = useDisclosure();
-  const archiveCancelRef = useRef(); // Separate ref for archive dialog
+  const archiveCancelRef = useRef();
   const [noteToArchive, setNoteToArchive] = useState(null);
 
-  // State and disclosure for Update Modal
   const {
     isOpen: isUpdateOpen,
     onOpen: onUpdateOpen,
@@ -113,19 +121,21 @@ const Folders = ({ shouldRefetchNotes }) => {
     fetchNotes();
   }, [shouldRefetchNotes]);
 
-  // Handler for opening the delete confirmation dialog
+  // Effect to save sortBy to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("noteSortBy", sortBy);
+  }, [sortBy]);
+
   const handleDeleteNote = (noteId) => {
     setNoteToDelete(noteId);
     onDeleteOpen();
   };
 
-  // Handler for opening the archive confirmation dialog
   const handleArchiveNoteClick = (noteId) => {
     setNoteToArchive(noteId);
     onArchiveOpen();
   };
 
-  // Handler for opening the update modal
   const handleUpdateNote = (note) => {
     setNoteToUpdate(note);
     setUpdatedTitle(note.title);
@@ -134,7 +144,6 @@ const Folders = ({ shouldRefetchNotes }) => {
     onUpdateOpen();
   };
 
-  // Confirmation logic for deleting a note
   const confirmDelete = async () => {
     if (!noteToDelete) return;
 
@@ -156,7 +165,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           response.data.message || "Note has been successfully moved to Trash.",
           "success"
         );
-        fetchNotes(); // Ensure UI is perfectly in sync
+        fetchNotes();
       } else {
         throw new Error(
           response.data.message || "Failed to move note to trash."
@@ -174,7 +183,6 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  // Confirmation logic for archiving a note
   const confirmArchive = async () => {
     if (!noteToArchive) return;
 
@@ -184,7 +192,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:5000/api/archivednotes/${noteToArchive}` // Make sure this route exists and handles archiving
+        `http://localhost:5000/api/archivednotes/${noteToArchive}`
       );
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -196,7 +204,7 @@ const Folders = ({ shouldRefetchNotes }) => {
             "Note has been successfully moved to Archived.",
           "info"
         );
-        fetchNotes(); // Re-fetch notes to update the UI (e.g., remove archived note)
+        fetchNotes();
       } else {
         throw new Error(response.data.message || "Failed to archive the note.");
       }
@@ -209,7 +217,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       displayToast("Error", errorMessage, "error");
     } finally {
       setLoading(false);
-      setNoteToArchive(null); // Clear the note after attempt
+      setNoteToArchive(null);
     }
   };
 
@@ -218,10 +226,9 @@ const Folders = ({ shouldRefetchNotes }) => {
     setError(null);
 
     try {
-      // Send the new favorite status to the backend
       const response = await axios.put(
-        `http://localhost:5000/api/favorites/${noteId}`,
-        { isFavorite: !currentIsFavorite } // Toggle the status
+        `http://localhost:5000/api/notes/${noteId}/favorite`,
+        { isFavorite: !currentIsFavorite }
       );
 
       if (response.status === 200) {
@@ -233,7 +240,6 @@ const Folders = ({ shouldRefetchNotes }) => {
             } favorites.`,
           "success"
         );
-        // Optimistically update the UI without re-fetching all notes
         setNotes((prevNotes) =>
           prevNotes.map((note) =>
             note._id === noteId
@@ -263,9 +269,8 @@ const Folders = ({ shouldRefetchNotes }) => {
 
     setLoading(true);
     setError(null);
-    onUpdateClose(); // Close the update modal
+    onUpdateClose();
 
-    // Check if any modifications were made
     const hasChanges =
       updatedTitle !== noteToUpdate.title ||
       updatedNotes !== noteToUpdate.notes ||
@@ -300,7 +305,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           "Note has been successfully updated.",
           "success"
         );
-        await fetchNotes(); // Re-fetch the latest data from the server
+        await fetchNotes();
       } else {
         const errorMessage =
           response.data.message || "Failed to update the note.";
@@ -321,6 +326,23 @@ const Folders = ({ shouldRefetchNotes }) => {
       setUpdatedColor("");
     }
   };
+
+  const sortedNotes = useMemo(() => {
+    let sortableNotes = [...notes];
+
+    if (sortBy === "az") {
+      sortableNotes.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "dateDesc") {
+      sortableNotes.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    } else if (sortBy === "dateAsc") {
+      sortableNotes.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+    }
+    return sortableNotes;
+  }, [notes, sortBy]);
 
   const renderNoteContent = () => {
     if (loading) {
@@ -351,7 +373,7 @@ const Folders = ({ shouldRefetchNotes }) => {
             alignItems="center"
             w="200px"
             h="auto"
-            mx="auto" // Centers the Box itself
+            mx="auto"
             mt={50}
           >
             <img
@@ -382,11 +404,11 @@ const Folders = ({ shouldRefetchNotes }) => {
               mt={4}
               gap={4}
             >
-              {notes.map((note, index) => (
+              {sortedNotes.map((note, index) => (
                 <Box
                   key={note._id || index}
                   p={6}
-                  bg={note.color} // Use the note's color here
+                  bg={note.color}
                   borderRadius="lg"
                   position="relative"
                   width="100%"
@@ -443,8 +465,8 @@ const Folders = ({ shouldRefetchNotes }) => {
                             note.isFavorite
                               ? MdOutlineFavorite
                               : MdOutlineFavoriteBorder
-                          } // Conditional icon
-                          color={note.isFavorite ? "red.500" : "inherit"} // Conditional color
+                          }
+                          color={note.isFavorite ? "red.500" : "inherit"}
                           mr={2}
                         />{" "}
                         {note.isFavorite ? "Unfavorite" : "Favorite"}
@@ -466,7 +488,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         My Notes
       </Heading>
 
-      <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
+      {/* Main button group for note tabs, centered */}
+      <ButtonGroup mb={2} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
             key={tab}
@@ -479,6 +502,30 @@ const Folders = ({ shouldRefetchNotes }) => {
           </Button>
         ))}
       </ButtonGroup>
+
+      {/* Flex container for the sorting dropdown, right-aligned below the button group */}
+      <Flex width="100%" mb={4} pr={4} justifyContent="flex-end">
+        <Spacer />
+        <Menu>
+          <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm">
+            Sort By:{" "}
+            {sortBy === "az"
+              ? "A-Z"
+              : sortBy === "dateDesc"
+              ? "Date (Newest)"
+              : "Date (Oldest)"}
+          </MenuButton>
+          <MenuList>
+            <MenuItem onClick={() => setSortBy("az")}>A-Z</MenuItem>
+            <MenuItem onClick={() => setSortBy("dateDesc")}>
+              Date (Newest First)
+            </MenuItem>
+            <MenuItem onClick={() => setSortBy("dateAsc")}>
+              Date (Oldest First)
+            </MenuItem>
+          </MenuList>
+        </Menu>
+      </Flex>
 
       {renderNoteContent()}
 
@@ -538,11 +585,7 @@ const Folders = ({ shouldRefetchNotes }) => {
               <Button ref={archiveCancelRef} onClick={onArchiveClose}>
                 Cancel
               </Button>
-              <Button
-                colorScheme="blue" // You can choose your desired color scheme
-                onClick={confirmArchive}
-                ml={3}
-              >
+              <Button colorScheme="blue" onClick={confirmArchive} ml={3}>
                 Archive
               </Button>
             </AlertDialogFooter>
@@ -581,23 +624,23 @@ const Folders = ({ shouldRefetchNotes }) => {
                   <Circle
                     key={color}
                     size="24px"
-                    bg={color} // Use the actual color value
+                    bg={color}
                     cursor="pointer"
                     border="2px solid transparent"
                     borderColor={
                       updatedColor === color ? "blue.500" : "transparent"
                     }
                     _hover={{
-                      borderColor: "blue.300", // Light hover border
+                      borderColor: "blue.300",
                     }}
                     _focus={{
                       outline: "2px solid blue.500",
                       boxShadow: "0 0 5px blue.500",
                     }}
                     _active={{
-                      borderColor: "blue.700", // Darker border on active click
+                      borderColor: "blue.700",
                     }}
-                    onClick={() => setUpdatedColor(color)} // Set the updatedColor state
+                    onClick={() => setUpdatedColor(color)}
                   />
                 ))}
               </HStack>
