@@ -39,7 +39,7 @@ import axios from "axios";
 import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
-import { MdOutlineFavoriteBorder } from "react-icons/md";
+import { MdOutlineFavoriteBorder, MdOutlineFavorite } from "react-icons/md"; // Import filled favorite icon
 import { colors } from "../utils/colors"; // Assuming colors are defined here
 
 const Folders = ({ shouldRefetchNotes }) => {
@@ -183,10 +183,8 @@ const Folders = ({ shouldRefetchNotes }) => {
     onArchiveClose();
 
     try {
-      // Ensure noteToArchive has an _id property and use it in the URL
-
       const response = await axios.delete(
-        `http://localhost:5000/api/archivednotes/${noteToArchive}`
+        `http://localhost:5000/api/archivednotes/${noteToArchive}` // Make sure this route exists and handles archiving
       );
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -200,13 +198,10 @@ const Folders = ({ shouldRefetchNotes }) => {
         );
         fetchNotes(); // Re-fetch notes to update the UI (e.g., remove archived note)
       } else {
-        // This part might be less likely if the server sends a 5xx or 4xx for errors,
-        // but it's good to have.
         throw new Error(response.data.message || "Failed to archive the note.");
       }
     } catch (err) {
       console.error("Error archiving note:", err);
-      // Access error message from err.response.data if available
       const errorMessage =
         err.response?.data?.message ||
         "Failed to archive note. Please try again later.";
@@ -218,16 +213,49 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  const handleFavoriteNote = async (noteId) => {
-    console.log("Favoriting note with ID:", noteId);
-    displayToast(
-      "Note Favorited",
-      "Note has been added to favorites.",
-      "success"
-    );
-    // You might want to implement actual favoriting logic here (e.g., API call)
-    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
-    fetchNotes();
+  const handleToggleFavorite = async (noteId, currentIsFavorite) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Send the new favorite status to the backend
+      const response = await axios.put(
+        `http://localhost:5000/api/favorites/${noteId}`,
+        { isFavorite: !currentIsFavorite } // Toggle the status
+      );
+
+      if (response.status === 200) {
+        displayToast(
+          "Note Favorite Status Updated!",
+          response.data.message ||
+            `Note has been ${
+              !currentIsFavorite ? "added to" : "removed from"
+            } favorites.`,
+          "success"
+        );
+        // Optimistically update the UI without re-fetching all notes
+        setNotes((prevNotes) =>
+          prevNotes.map((note) =>
+            note._id === noteId
+              ? { ...note, isFavorite: !currentIsFavorite }
+              : note
+          )
+        );
+      } else {
+        throw new Error(
+          response.data.message || "Failed to update favorite status."
+        );
+      }
+    } catch (err) {
+      console.error("Error toggling favorite status:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to update favorite status. Please try again later.";
+      setError(errorMessage);
+      displayToast("Error", errorMessage, "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const confirmUpdate = async () => {
@@ -403,12 +431,23 @@ const Folders = ({ shouldRefetchNotes }) => {
                       <MenuItem
                         onClick={() => handleArchiveNoteClick(note._id)}
                       >
-                        {" "}
-                        {/* Changed here */}
                         <Icon as={CiFileOff} mr={2} /> Archive
                       </MenuItem>
-                      <MenuItem onClick={() => handleFavoriteNote(note._id)}>
-                        <Icon as={MdOutlineFavoriteBorder} mr={2} /> Favorite
+                      <MenuItem
+                        onClick={() =>
+                          handleToggleFavorite(note._id, note.isFavorite)
+                        }
+                      >
+                        <Icon
+                          as={
+                            note.isFavorite
+                              ? MdOutlineFavorite
+                              : MdOutlineFavoriteBorder
+                          } // Conditional icon
+                          color={note.isFavorite ? "red.500" : "inherit"} // Conditional color
+                          mr={2}
+                        />{" "}
+                        {note.isFavorite ? "Unfavorite" : "Favorite"}
                       </MenuItem>
                     </MenuList>
                   </Menu>

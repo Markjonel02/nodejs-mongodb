@@ -15,7 +15,10 @@ const TrashSchema = new mongoose.Schema(
       type: String,
       default: "gray.200", // A default color if none is provided
     },
-
+    isFavorite: {
+      type: Boolean,
+      default: false, // Default value for favorite status
+    },
     createdAt: {
       type: Date,
       default: Date.now,

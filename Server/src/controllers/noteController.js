@@ -29,6 +29,8 @@ exports.getNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Delete a note and move it to the Trash collection
 exports.delNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,6 +61,18 @@ exports.delNotes = async (req, res) => {
   } catch (error) {
     console.error("Error Deleting notes:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+//getting deleted notes from trash
+exports.getTrashNotes = async (req, res) => {
+  try {
+    // Fetch all notes from the Trash collection
+    const trashNotes = await Trashnotes.find({}).sort({ createdAt: -1 });
+    res.status(200).json(trashNotes);
+  } catch (error) {
+    console.error("Error fetching trash notes:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 exports.updateNotes = async (req, res) => {
@@ -118,5 +132,56 @@ exports.archivedNotes = async (req, res) => {
   } catch (error) {
     console.error("Error Deleting notes:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+//getting archived notes
+exports.getArchivedNotes = async (req, res) => {
+  try {
+    // Fetch all notes from the Archived collection
+    const archivedNotes = await Archived.find({}).sort({ createdAt: -1 });
+    res.status(200).json(archivedNotes);
+  } catch (error) {
+    console.error("Error fetching archived notes:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+exports.createFavorite = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the note ID from the URL parameters
+    const { isFavorite } = req.body; // Get the new favorite status from the request body
+
+    console.log(`Request received to toggle favorite for note ID: ${id}`);
+    console.log(`New isFavorite status: ${isFavorite}`);
+
+    // Find the note by ID and update its isFavorite status
+    const updatedNote = await Addnote.findByIdAndUpdate(
+      id,
+      { isFavorite: isFavorite },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedNote) {
+      console.log(`Note with ID: ${id} not found.`);
+      return res.status(404).json({ message: "Note not found." });
+    }
+
+    console.log("Note favorite status updated successfully:", updatedNote);
+    res.status(200).json({
+      message: "Note favorite status updated successfully",
+      updatedNote,
+    });
+  } catch (error) {
+    console.error("Error in toggleFavorite controller:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const getFavoriteById = async (req, res) => {
+  try {
+    const favoriteNotes = await Addnote.find({ isFavorite: true });
+    res.status(200).json(favoriteNotes);
+  } catch (error) {
+    console.error("Error fetching favorite notes:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };

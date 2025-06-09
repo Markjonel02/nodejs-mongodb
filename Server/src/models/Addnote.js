@@ -15,6 +15,10 @@ const AddnoteSchema = new mongoose.Schema(
       type: String,
       default: "gray.200", // A default color if none is provided
     },
+    isFavorite: {
+      type: Boolean,
+      default: false, // Default value for favorite status
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -24,12 +28,5 @@ const AddnoteSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-// Update 'updatedAt' field on save
-/* AddnoteSchema.pre("save", function (next) {
-  if (this.isNew) {
-    this.date = new Date();
-  }
-  next();
-}); */
 
 module.exports = mongoose.model("Addnote", AddnoteSchema);
