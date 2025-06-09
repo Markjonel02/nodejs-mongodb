@@ -24,7 +24,7 @@ app.use("/api", noteRoutes); // Prefix all note routes with /api/notes
 app.get("/api", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
-
+/* 
 app.delete("/api", (req, res) => {
   res.send("Deleted Successfully!");
 });
@@ -32,6 +32,11 @@ app.delete("/api", (req, res) => {
 app.put("/api", (res, req) => {
   res.send("Updated Successfully");
 });
+
+app.delete("/api", (req, res) => {
+  res.send("Moved to archived Successfully");
+}); */
+
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

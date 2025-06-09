@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
-
-const AddnoteSchema = new mongoose.Schema(
+const ArchivedSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -15,11 +14,15 @@ const AddnoteSchema = new mongoose.Schema(
       type: String,
       default: "gray.200", // A default color if none is provided
     },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
     isFavorite: {
       type: Boolean,
       default: false, // Default value for favorite status
     },
-    createdAt: {
+    ArchivedAt: {
       type: Date,
       default: Date.now,
     },
@@ -29,4 +32,4 @@ const AddnoteSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Addnote", AddnoteSchema);
+module.exports = mongoose.model("Archived", ArchivedSchema);

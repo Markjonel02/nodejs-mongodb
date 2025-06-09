@@ -33,16 +33,14 @@ import {
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
-import { memo } from "react";
 import book from "../assets/img/wmremove-transformed.png";
 import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
-import { MdOutlineFavoriteBorder } from "react-icons/md";
+import { MdOutlineFavoriteBorder, MdOutlineFavorite } from "react-icons/md"; // Import filled favorite icon
 import { colors } from "../utils/colors"; // Assuming colors are defined here
-import { color } from "framer-motion";
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
@@ -51,6 +49,7 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [error, setError] = useState(null);
   const toast = useToast();
 
+  // State and disclosure for Delete AlertDialog
   const {
     isOpen: isDeleteOpen,
     onOpen: onDeleteOpen,
@@ -59,6 +58,16 @@ const Folders = ({ shouldRefetchNotes }) => {
   const cancelRef = useRef();
   const [noteToDelete, setNoteToDelete] = useState(null);
 
+  // State and disclosure for Archive AlertDialog
+  const {
+    isOpen: isArchiveOpen,
+    onOpen: onArchiveOpen,
+    onClose: onArchiveClose,
+  } = useDisclosure();
+  const archiveCancelRef = useRef(); // Separate ref for archive dialog
+  const [noteToArchive, setNoteToArchive] = useState(null);
+
+  // State and disclosure for Update Modal
   const {
     isOpen: isUpdateOpen,
     onOpen: onUpdateOpen,
@@ -104,19 +113,28 @@ const Folders = ({ shouldRefetchNotes }) => {
     fetchNotes();
   }, [shouldRefetchNotes]);
 
+  // Handler for opening the delete confirmation dialog
   const handleDeleteNote = (noteId) => {
     setNoteToDelete(noteId);
     onDeleteOpen();
   };
 
+  // Handler for opening the archive confirmation dialog
+  const handleArchiveNoteClick = (noteId) => {
+    setNoteToArchive(noteId);
+    onArchiveOpen();
+  };
+
+  // Handler for opening the update modal
   const handleUpdateNote = (note) => {
-    // This function is correctly used to prepare the modal with the note's current data
     setNoteToUpdate(note);
     setUpdatedTitle(note.title);
     setUpdatedNotes(note.notes);
     setUpdatedColor(note.color);
-    onUpdateOpen(); // Open the update modal
+    onUpdateOpen();
   };
+
+  // Confirmation logic for deleting a note
   const confirmDelete = async () => {
     if (!noteToDelete) return;
 
@@ -129,7 +147,6 @@ const Folders = ({ shouldRefetchNotes }) => {
         `http://localhost:5000/api/delnotes/${noteToDelete}`
       );
 
-      // Ensure we check the HTTP status for success instead of relying on the message
       if (response.status === 200) {
         setNotes((prevNotes) =>
           prevNotes.filter((note) => note._id !== noteToDelete)
@@ -157,29 +174,90 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  const handleArchiveNote = async (noteId) => {
-    console.log("Archiving note with ID:", noteId);
-    displayToast(
-      "Note Archived",
-      "Note has been successfully archived.",
-      "info"
-    );
-    // You might want to implement actual archiving logic here (e.g., API call)
-    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
-    fetchNotes();
+  // Confirmation logic for archiving a note
+  const confirmArchive = async () => {
+    if (!noteToArchive) return;
+
+    setLoading(true);
+    setError(null);
+    onArchiveClose();
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:5000/api/archivednotes/${noteToArchive}` // Make sure this route exists and handles archiving
+      );
+      if (response.status === 200) {
+        setNotes((prevNotes) =>
+          prevNotes.filter((note) => note._id !== noteToArchive)
+        );
+        displayToast(
+          "Note Archived!",
+          response.data.message ||
+            "Note has been successfully moved to Archived.",
+          "info"
+        );
+        fetchNotes(); // Re-fetch notes to update the UI (e.g., remove archived note)
+      } else {
+        throw new Error(response.data.message || "Failed to archive the note.");
+      }
+    } catch (err) {
+      console.error("Error archiving note:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to archive note. Please try again later.";
+      setError(errorMessage);
+      displayToast("Error", errorMessage, "error");
+    } finally {
+      setLoading(false);
+      setNoteToArchive(null); // Clear the note after attempt
+    }
   };
 
-  const handleFavoriteNote = async (noteId) => {
-    console.log("Favoriting note with ID:", noteId);
-    displayToast(
-      "Note Favorited",
-      "Note has been added to favorites.",
-      "success"
-    );
-    // You might want to implement actual favoriting logic here (e.g., API call)
-    // and then re-fetch notes. For now, it's just a toast and a re-fetch.
-    fetchNotes();
+  const handleToggleFavorite = async (noteId, currentIsFavorite) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Send the new favorite status to the backend
+      const response = await axios.put(
+        `http://localhost:5000/api/favorites/${noteId}`,
+        { isFavorite: !currentIsFavorite } // Toggle the status
+      );
+
+      if (response.status === 200) {
+        displayToast(
+          "Note Favorite Status Updated!",
+          response.data.message ||
+            `Note has been ${
+              !currentIsFavorite ? "added to" : "removed from"
+            } favorites.`,
+          "success"
+        );
+        // Optimistically update the UI without re-fetching all notes
+        setNotes((prevNotes) =>
+          prevNotes.map((note) =>
+            note._id === noteId
+              ? { ...note, isFavorite: !currentIsFavorite }
+              : note
+          )
+        );
+      } else {
+        throw new Error(
+          response.data.message || "Failed to update favorite status."
+        );
+      }
+    } catch (err) {
+      console.error("Error toggling favorite status:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to update favorite status. Please try again later.";
+      setError(errorMessage);
+      displayToast("Error", errorMessage, "error");
+    } finally {
+      setLoading(false);
+    }
   };
+
   const confirmUpdate = async () => {
     if (!noteToUpdate) return;
 
@@ -350,11 +428,26 @@ const Folders = ({ shouldRefetchNotes }) => {
                       <MenuItem onClick={() => handleDeleteNote(note._id)}>
                         <Icon as={IoTrashBinOutline} mr={2} /> Delete
                       </MenuItem>
-                      <MenuItem onClick={() => handleArchiveNote(note._id)}>
+                      <MenuItem
+                        onClick={() => handleArchiveNoteClick(note._id)}
+                      >
                         <Icon as={CiFileOff} mr={2} /> Archive
                       </MenuItem>
-                      <MenuItem onClick={() => handleFavoriteNote(note._id)}>
-                        <Icon as={MdOutlineFavoriteBorder} mr={2} /> Favorite
+                      <MenuItem
+                        onClick={() =>
+                          handleToggleFavorite(note._id, note.isFavorite)
+                        }
+                      >
+                        <Icon
+                          as={
+                            note.isFavorite
+                              ? MdOutlineFavorite
+                              : MdOutlineFavoriteBorder
+                          } // Conditional icon
+                          color={note.isFavorite ? "red.500" : "inherit"} // Conditional color
+                          mr={2}
+                        />{" "}
+                        {note.isFavorite ? "Unfavorite" : "Favorite"}
                       </MenuItem>
                     </MenuList>
                   </Menu>
@@ -418,6 +511,39 @@ const Folders = ({ shouldRefetchNotes }) => {
                 _hover={{ color: "black", bg: "gray.100" }}
               >
                 Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      {/* Archive Confirmation AlertDialog */}
+      <AlertDialog
+        isOpen={isArchiveOpen}
+        leastDestructiveRef={archiveCancelRef}
+        onClose={onArchiveClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Archive Note
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to archive this note? It will be moved to
+              your archived notes.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={archiveCancelRef} onClick={onArchiveClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue" // You can choose your desired color scheme
+                onClick={confirmArchive}
+                ml={3}
+              >
+                Archive
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

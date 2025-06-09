@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react"; // Import memo
+import { useState, memo } from "react"; // Import memo
 import {
   Box,
   VStack,
@@ -13,18 +13,15 @@ import {
   Input,
   useToast,
   Textarea,
-  Tooltip, // Import Tooltip for improved UX
+  Tooltip,
 } from "@chakra-ui/react";
 
-// Importing icons from react-icons/ci and react-icons/md
 import { CiCalendar, CiFileOn, CiTrash, CiHeart } from "react-icons/ci";
 import { MdAssignmentAdd } from "react-icons/md";
-// Using MdOutlineChevronLeft and MdOutlineChevronRight from react-icons/md as they are more appropriate
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
-import { HamburgerIcon } from "@chakra-ui/icons"; // Hamburger icon from Chakra UI
-import { motion } from "framer-motion"; // For smooth animations
-import video from "/9zre4m7JbH74ruby0Q.mp4";
-import axios from "axios"; // For making HTTP requests to your backend
+import { HamburgerIcon } from "@chakra-ui/icons";
+import { motion } from "framer-motion";
+import axios from "axios";
 import { colors } from "../utils/colors";
 
 const sidebarLinks = [
@@ -63,11 +60,6 @@ const Sidebar = ({ onNoteAdded }) => {
   // On small screens, the sidebar is "collapsed" if the overlay is NOT open
   const actualCollapsedState = isSmallScreen ? !isOverlayOpen : collapsed;
 
-  /**
-   * Handles the click event for the "Add new" button.
-   * - If the sidebar is currently collapsed, it will uncollapse it and show the new note form.
-   * - If the sidebar is already uncollapsed, it will simply toggle the visibility of the new note form.
-   */
   const handleAddNewClick = () => {
     if (actualCollapsedState) {
       // If sidebar is collapsed, uncollapse it and immediately show the form
@@ -79,11 +71,6 @@ const Sidebar = ({ onNoteAdded }) => {
     }
   };
 
-  /**
-   * Handles saving a new note.
-   * Performs input validation, sends data to the backend via axios,
-   * displays toast notifications for success or error, and resets form fields.
-   */
   const handleSaveNote = async () => {
     // Input validation: ensure title and content are not empty
     if (!newNoteTitle.trim() || !newNoteContent.trim()) {
@@ -336,13 +323,13 @@ const Sidebar = ({ onNoteAdded }) => {
         {/* Bottom Section: Upgrade Pro and Collapse Button */}
         <Box p={4} textAlign="center">
           {/* Upgrade Pro section, visible only when sidebar is not collapsed */}
-          {!actualCollapsedState && (
-            <>
-              <video width="750" height="500" muted loop autoPlay>
+          {/* {!actualCollapsedState && (
+            <Box mb={4} border={"none"}>
+              <video width="100%" height="auto" muted loop autoPlay>
                 <source src={video} type="video/mp4" />
               </video>
-            </>
-          )}
+            </Box>
+          )} */}
           <Box
             display="flex"
             // Center button if collapsed, align left if expanded

@@ -6,4 +6,7 @@ router.post("/notes", noteController.createNote);
 router.get("/getnotes", noteController.getNotes);
 router.delete("/delnotes/:id", noteController.delNotes);
 router.put("/updatenotes/:id", noteController.updateNotes);
+router.delete("/archivednotes/:id", noteController.archivedNotes);
+router.put("/favorites/:id", noteController.createFavorite);
+
 module.exports = router;
