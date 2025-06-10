@@ -1,4 +1,4 @@
-import { useState, memo } from "react"; // Import memo
+import { useState, memo, lazy, Suspense } from "react"; // Suspense is imported but not directly used in Sidebar, only in the parent where Routes are defined
 import {
   Box,
   VStack,
@@ -16,22 +16,26 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 
-import { CiCalendar, CiFileOn, CiTrash, CiHeart } from "react-icons/ci";
+import { CiCalendar, CiFileOn, CiTrash, CiHeart, CiHome } from "react-icons/ci";
 import { MdAssignmentAdd } from "react-icons/md";
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { colors } from "../utils/colors";
+import { colors } from "../utils/colors"; // Assuming colors are defined here
+import { Link as RouterLink, useLocation } from "react-router-dom";
+
+// Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
+// routes are used in the parent App.js (or similar) where <Routes> are defined.
+// The sidebar itself only needs the string path.
 
 const sidebarLinks = [
-  { label: "Calendar", icon: CiCalendar },
-  { label: "Archive", icon: CiFileOn },
-  { label: "Trash", icon: CiTrash },
-  { label: "Favorites", icon: CiHeart },
+  { label: "Dashboard", icon: CiHome, path: "/" },
+  { label: "Calendar", icon: CiCalendar, path: "/calendar" },
+  { label: "Archive", icon: CiFileOn, path: "/archive" },
+  { label: "Trash", icon: CiTrash, path: "/trash" },
+  { label: "Favorites", icon: CiHeart, path: "/favorites" },
 ];
-
-// Array of colors for note selection
 
 // Define MotionBox for animating the new note form
 const MotionBox = motion(Box);
@@ -55,6 +59,8 @@ const Sidebar = ({ onNoteAdded }) => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   // Chakra UI toast hook for displaying notifications
   const toast = useToast();
+  // Hook to get current location for active link styling
+  const location = useLocation();
 
   // Determine the actual collapsed state based on screen size and overlay status
   // On small screens, the sidebar is "collapsed" if the overlay is NOT open
@@ -297,7 +303,7 @@ const Sidebar = ({ onNoteAdded }) => {
 
           {/* Navigation Links with Tooltips */}
           <VStack align="start" spacing={4} color="gray.400" mt={5}>
-            {sidebarLinks.map(({ label, icon: Icon }) => (
+            {sidebarLinks.map(({ label, icon: Icon, path }) => (
               <Tooltip
                 key={label}
                 label={label}
@@ -306,11 +312,16 @@ const Sidebar = ({ onNoteAdded }) => {
                 placement="right"
               >
                 <HStack
+                  as={RouterLink} // Use RouterLink for navigation
+                  to={path} // 'path' here is a string URL, e.g., "/calendar"
                   spacing={2}
                   cursor="pointer"
                   _hover={{ color: "gray.600", transform: "scale(1.05)" }}
                   transition="all 0.2s"
                   onClick={() => isSmallScreen && setIsOverlayOpen(false)}
+                  // Apply active styling if the current path matches the link's path
+                  color={location.pathname === path ? "blue.500" : "gray.400"} // This comparison is now correct
+                  fontWeight={location.pathname === path ? "bold" : "normal"}
                 >
                   <Icon size={25} />
                   {!actualCollapsedState && <Text>{label}</Text>}
@@ -322,14 +333,6 @@ const Sidebar = ({ onNoteAdded }) => {
 
         {/* Bottom Section: Upgrade Pro and Collapse Button */}
         <Box p={4} textAlign="center">
-          {/* Upgrade Pro section, visible only when sidebar is not collapsed */}
-          {/* {!actualCollapsedState && (
-            <Box mb={4} border={"none"}>
-              <video width="100%" height="auto" muted loop autoPlay>
-                <source src={video} type="video/mp4" />
-              </video>
-            </Box>
-          )} */}
           <Box
             display="flex"
             // Center button if collapsed, align left if expanded
