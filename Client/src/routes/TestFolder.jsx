@@ -34,6 +34,8 @@ import {
   Spacer,
   InputGroup,
   InputLeftElement,
+  Skeleton, // Import Skeleton
+  SkeletonText, // Import SkeletonText
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal, FiSearch } from "react-icons/fi";
@@ -372,14 +374,6 @@ const Folders = ({ shouldRefetchNotes }) => {
   }, [notes, sortBy, debouncedSearchTerm]);
 
   const renderNoteContent = () => {
-    if (loading) {
-      return (
-        <Text textAlign="center" mt={8}>
-          Loading notes...
-        </Text>
-      );
-    }
-
     if (error) {
       return (
         <Text textAlign="center" mt={8} color="red.500">
@@ -400,7 +394,8 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
 
     // If no notes are found (either initially or after filtering)
-    if (filteredAndSortedNotes.length === 0) {
+    if (filteredAndSortedNotes.length === 0 && !loading) {
+      // Added !loading here
       return (
         <>
           {searchResultCountMessage}{" "}
@@ -426,6 +421,55 @@ const Folders = ({ shouldRefetchNotes }) => {
             />
           </Box>
         </>
+      );
+    }
+
+    // Skeleton Loader when loading is true
+    if (loading) {
+      return (
+        <SimpleGrid
+          columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
+          spacing={4}
+          mt={4}
+          gap={4}
+        >
+          {[...Array(8)].map(
+            (
+              _,
+              index // Render 8 skeleton cards as an example
+            ) => (
+              <Box
+                key={index}
+                p={6}
+                bg="gray.100" // A light background for the skeleton
+                borderRadius="lg"
+                position="relative"
+                width="100%"
+                boxShadow="md"
+                textAlign="left"
+              >
+                <Skeleton height="30px" width="30px" mb={4} />{" "}
+                {/* Icon skeleton */}
+                <SkeletonText
+                  mt="4"
+                  noOfLines={1}
+                  spacing="4"
+                  height="20px"
+                />{" "}
+                {/* Title skeleton */}
+                <SkeletonText
+                  mt="4"
+                  noOfLines={3}
+                  spacing="4"
+                  skeletonHeight="10px"
+                />{" "}
+                {/* Text content skeleton */}
+                <Skeleton mt="4" height="15px" width="50%" />{" "}
+                {/* Date skeleton */}
+              </Box>
+            )
+          )}
+        </SimpleGrid>
       );
     }
 
@@ -541,7 +585,7 @@ const Folders = ({ shouldRefetchNotes }) => {
   };
 
   return (
-    <Box p={6} bg="gray.50" minH="100vh">
+    <Box p={6}>
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
       </Heading>
@@ -601,7 +645,12 @@ const Folders = ({ shouldRefetchNotes }) => {
         </InputGroup>
         <Spacer />
         <Menu>
-          <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm">
+          <MenuButton
+            as={Button}
+            rightIcon={<ChevronDownIcon />}
+            size="sm"
+            bg={"transparent"}
+          >
             Sort By:{" "}
             {sortBy === "az"
               ? "A-Z"
