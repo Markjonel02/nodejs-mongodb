@@ -32,9 +32,11 @@ import {
   Circle,
   Flex,
   Spacer,
+  InputGroup,
+  InputLeftElement,
 } from "@chakra-ui/react";
 
-import { FiMoreHorizontal } from "react-icons/fi";
+import { FiMoreHorizontal, FiSearch } from "react-icons/fi";
 import { useState, useEffect, useRef, memo, useMemo } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
@@ -56,8 +58,9 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Initialize sortBy using the helper function
   const [sortBy, setSortBy] = useState(getInitialSortBy);
+  const [searchTerm, setSearchTerm] = useState(""); // State for immediate input value
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(""); // Debounced state for filtering
   const toast = useToast();
 
   const {
@@ -121,10 +124,22 @@ const Folders = ({ shouldRefetchNotes }) => {
     fetchNotes();
   }, [shouldRefetchNotes]);
 
-  // Effect to save sortBy to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("noteSortBy", sortBy);
   }, [sortBy]);
+
+  // Debounce effect for search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    // Cleanup function: This runs if searchTerm changes before the timeout
+    // or if the component unmounts.
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]); // Re-run effect only when searchTerm changes
 
   const handleDeleteNote = (noteId) => {
     setNoteToDelete(noteId);
@@ -227,7 +242,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/notes/${noteId}/favorite`,
+        `http://localhost:5000/api/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite }
       );
 
@@ -327,22 +342,34 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  const sortedNotes = useMemo(() => {
-    let sortableNotes = [...notes];
+  // Filter notes based on debouncedSearchTerm, then sort them
+  const filteredAndSortedNotes = useMemo(() => {
+    let currentNotes = [...notes];
 
+    // 1. Filter using debouncedSearchTerm
+    if (debouncedSearchTerm) {
+      const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+      currentNotes = currentNotes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+          note.notes.toLowerCase().includes(lowercasedSearchTerm)
+      );
+    }
+
+    // 2. Sort
     if (sortBy === "az") {
-      sortableNotes.sort((a, b) => a.title.localeCompare(b.title));
+      currentNotes.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === "dateDesc") {
-      sortableNotes.sort(
+      currentNotes.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
     } else if (sortBy === "dateAsc") {
-      sortableNotes.sort(
+      currentNotes.sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
     }
-    return sortableNotes;
-  }, [notes, sortBy]);
+    return currentNotes;
+  }, [notes, sortBy, debouncedSearchTerm]);
 
   const renderNoteContent = () => {
     if (loading) {
@@ -361,11 +388,27 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    if (notes.length === 0) {
+    // Determine the search result count message
+    let searchResultCountMessage = null;
+    if (debouncedSearchTerm && filteredAndSortedNotes.length > 0) {
+      const resultCount = filteredAndSortedNotes.length;
+      searchResultCountMessage = (
+        <Text textAlign="center" mt={4} mb={6} fontSize="md" color="gray.600">
+          {resultCount} {resultCount === 1 ? "result" : "results"} found.
+        </Text>
+      );
+    }
+
+    // If no notes are found (either initially or after filtering)
+    if (filteredAndSortedNotes.length === 0) {
       return (
         <>
+          {searchResultCountMessage}{" "}
+          {/* Show count if applicable (e.g., "0 results found") */}
           <Text textAlign="center" mt={20} fontWeight={500} fontSize={20}>
-            No notes found. Start by adding a new one!
+            {debouncedSearchTerm
+              ? "No matching notes found."
+              : "No notes found. Start by adding a new one!"}
           </Text>
           <Box
             display="flex"
@@ -386,99 +429,114 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
+    // If there are notes to display, render the count message (if any)
+    // and then the SimpleGrid of notes.
     return (
-      <Box position="relative" width="100%" mb={8}>
-        <Box
-          width={{ base: "100%" }}
-          pr={{ base: 0, md: 4 }}
-          mb={6}
-          display="flex"
-          flexDirection={{ base: "column", md: "column", lg: "row" }}
-          alignItems={{ base: "flex-start", md: "center" }}
-          gap={4}
-        >
-          <Box flex="1" width="100%">
-            <SimpleGrid
-              columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
-              spacing={4}
-              mt={4}
-              gap={4}
-            >
-              {sortedNotes.map((note, index) => (
-                <Box
-                  key={note._id || index}
-                  p={6}
-                  bg={note.color}
-                  borderRadius="lg"
-                  position="relative"
-                  width="100%"
-                  boxShadow="md"
-                  textAlign="left"
-                >
-                  <FaNoteSticky color="#53b1ffff" mb="4" size={30} />
-                  <Text fontWeight="bold" fontSize="lg" mt={5}>
-                    {note.title.length > 15
-                      ? note.title.substring(0, 15) + "..."
-                      : note.title}
-                  </Text>
-                  <Text fontSize="12px" mt={1}>
-                    {note.notes.length > 100
-                      ? note.notes.substring(0, 100) + "..."
-                      : note.notes}
-                  </Text>
-                  <Text fontSize="12px" mt={1}>
-                    {new Date(note.createdAt).toLocaleDateString()}
-                  </Text>
-                  <Menu>
-                    <MenuButton
-                      as={Button}
-                      size="sm"
+      <>
+        {searchResultCountMessage} {/* Display the count message */}
+        <Box position="relative" width="100%" mb={8}>
+          <Box
+            width={{ base: "100%" }}
+            pr={{ base: 0, md: 4 }}
+            mb={6}
+            display="flex"
+            flexDirection={{ base: "column", md: "column", lg: "row" }}
+            alignItems={{ base: "flex-start", md: "center" }}
+            gap={4}
+          >
+            <Box flex="1" width="100%">
+              <SimpleGrid
+                columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
+                spacing={4}
+                mt={4}
+                gap={4}
+              >
+                {filteredAndSortedNotes.map((note, index) => (
+                  <Box
+                    key={note._id || index}
+                    p={6}
+                    bg={note.color}
+                    borderRadius="lg"
+                    position="relative"
+                    width="100%"
+                    boxShadow="md"
+                    textAlign="left"
+                  >
+                    <FaNoteSticky color="#53b1ffff" mb="4" size={30} />
+                    <Text fontWeight="bold" fontSize="lg" mt={5}>
+                      {note.title.length > 15
+                        ? note.title.substring(0, 15) + "..."
+                        : note.title}
+                    </Text>
+                    <Text fontSize="12px" mt={1} mb={4}>
+                      {note.notes.length > 100
+                        ? note.notes.substring(0, 100) + "..."
+                        : note.notes}
+                    </Text>
+
+                    {/* Fixed Date at Bottom Left */}
+                    <Text
+                      fontSize="12px"
                       position="absolute"
-                      top={3}
-                      right={3}
-                      aria-label="Note options"
-                      variant="ghost"
-                      _hover={{ bg: "transparent" }}
-                      onClick={(e) => e.stopPropagation()}
+                      bottom={3}
+                      left={6}
+                      mt={2}
+                      color="gray.600"
                     >
-                      <FiMoreHorizontal size={20} />
-                    </MenuButton>
-                    <MenuList>
-                      <MenuItem onClick={() => handleUpdateNote(note)}>
-                        <Icon as={CiEdit} mr={2} /> Edit
-                      </MenuItem>
-                      <MenuItem onClick={() => handleDeleteNote(note._id)}>
-                        <Icon as={IoTrashBinOutline} mr={2} /> Delete
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() => handleArchiveNoteClick(note._id)}
+                      {new Date(note.createdAt).toLocaleDateString()}
+                    </Text>
+
+                    <Menu>
+                      <MenuButton
+                        as={Button}
+                        size="sm"
+                        position="absolute"
+                        top={3}
+                        right={3}
+                        aria-label="Note options"
+                        variant="ghost"
+                        _hover={{ bg: "transparent" }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Icon as={CiFileOff} mr={2} /> Archive
-                      </MenuItem>
-                      <MenuItem
-                        onClick={() =>
-                          handleToggleFavorite(note._id, note.isFavorite)
-                        }
-                      >
-                        <Icon
-                          as={
-                            note.isFavorite
-                              ? MdOutlineFavorite
-                              : MdOutlineFavoriteBorder
+                        <FiMoreHorizontal size={20} />
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem onClick={() => handleUpdateNote(note)}>
+                          <Icon as={CiEdit} mr={2} /> Edit
+                        </MenuItem>
+                        <MenuItem onClick={() => handleDeleteNote(note._id)}>
+                          <Icon as={IoTrashBinOutline} mr={2} /> Delete
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handleArchiveNoteClick(note._id)}
+                        >
+                          <Icon as={CiFileOff} mr={2} /> Archive
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() =>
+                            handleToggleFavorite(note._id, note.isFavorite)
                           }
-                          color={note.isFavorite ? "red.500" : "inherit"}
-                          mr={2}
-                        />{" "}
-                        {note.isFavorite ? "Unfavorite" : "Favorite"}
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                </Box>
-              ))}
-            </SimpleGrid>
+                        >
+                          <Icon
+                            as={
+                              note.isFavorite
+                                ? MdOutlineFavorite
+                                : MdOutlineFavoriteBorder
+                            }
+                            color={note.isFavorite ? "red.500" : "inherit"}
+                            mr={2}
+                          />{" "}
+                          {note.isFavorite ? "Unfavorite" : "Favorite"}
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Box>
           </Box>
         </Box>
-      </Box>
+      </>
     );
   };
 
@@ -503,8 +561,44 @@ const Folders = ({ shouldRefetchNotes }) => {
         ))}
       </ButtonGroup>
 
-      {/* Flex container for the sorting dropdown, right-aligned below the button group */}
-      <Flex width="100%" mb={4} pr={4} justifyContent="flex-end">
+      {/* Flex container for the Search Bar (left) and Sorting Dropdown (right) */}
+      <Flex width="100%" mb={4} pr={4} pl={4} alignItems="center" mt={4}>
+        <InputGroup
+          width={{ base: "100%", sm: "200px", md: "250px", lg: "300px" }}
+          maxWidth={{ base: "100%", sm: "200px", md: "250px", lg: "300px" }}
+          transition="all 0.3s ease-in-out" // Slightly slower and smoother transition
+          _focusWithin={{
+            width: { base: "100%", sm: "250px", md: "350px", lg: "400px" },
+            maxWidth: { base: "100%", sm: "250px", md: "350px", lg: "400px" },
+
+            borderColor: "blue.400", // Blue border
+          }}
+          mr={4}
+          bg="white"
+          borderRadius="md"
+          boxShadow="sm"
+          _hover={{
+            boxShadow: "md",
+          }}
+        >
+          <InputLeftElement pointerEvents="none" height="100%">
+            <Icon as={FiSearch} color="gray.500" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            size="md"
+            pl="3rem"
+            border="1px solid"
+            borderColor="gray.200"
+            _placeholder={{ color: "gray.400" }}
+            _focus={{
+              borderColor: "blue.400",
+              boxShadow: "none",
+            }}
+          />
+        </InputGroup>
         <Spacer />
         <Menu>
           <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm">
@@ -527,6 +621,7 @@ const Folders = ({ shouldRefetchNotes }) => {
         </Menu>
       </Flex>
 
+      {/* Render the notes content based on conditions */}
       {renderNoteContent()}
 
       {/* Delete Confirmation AlertDialog */}

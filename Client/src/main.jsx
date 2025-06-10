@@ -8,10 +8,10 @@ import { BrowserRouter } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {/*     <BrowserRouter> */}
-    <ChakraProvider theme={customTheme}>
-      <App />
-    </ChakraProvider>
-    {/*     </BrowserRouter> */}
+    <BrowserRouter>
+      <ChakraProvider theme={customTheme}>
+        <App />
+      </ChakraProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
