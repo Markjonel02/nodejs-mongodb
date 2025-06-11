@@ -428,7 +428,7 @@ const Folders = ({ shouldRefetchNotes }) => {
     if (loading) {
       return (
         <SimpleGrid
-          columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
+          columns={{ base: 1, sm: 2, md: 2, lg: 3 }}
           spacing={4}
           mt={4}
           gap={4}

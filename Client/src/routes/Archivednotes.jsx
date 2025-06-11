@@ -291,7 +291,7 @@ const Archivednotes = () => {
     try {
       // **IMPORTANT:** Use the correct API endpoint for multiple restore
       // Based on our previous discussion, it should be /api/notes/restore-multiple
-      const response = await axios.put(
+      const response = await axios.post(
         "http://localhost:5000/api/arcnotes/restore-multiple", // Corrected endpoint
         { ids: Array.from(selectedNotes) }
       );
