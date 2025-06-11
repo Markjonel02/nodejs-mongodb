@@ -2,7 +2,7 @@ const Addnote = require("../models/Addnote");
 const Trashnotes = require("../models/Trash");
 const Archived = require("../models/Archived");
 const Trash = require("../models/Trash");
-const { Promise } = require("mongoose");
+const mongoose = require("mongoose");
 // Create a new note
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
@@ -243,47 +243,39 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
 //restore multiple
 exports.restoreMultipleNotes = async (req, res) => {
   try {
-    const { ids } = req.body; // Expects an array of note IDs in the request body
+    const { ids } = req.body;
 
-    // Input validation: Check if 'ids' is a non-empty array
+    // Validate input: Ensure 'ids' is a non-empty array
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
-        message: "No IDs provided for restoration or IDs is not a valid array.",
+        message: "Invalid request: 'ids' must be a non-empty array.",
       });
     }
 
-    // Find all archived notes matching those IDs and update them
-    // Only notes that are currently isArchived: true will be matched and updated.
+    // Restore archived notes
     const result = await Addnote.updateMany(
-      { _id: { $in: ids }, isArchived: true }, // <--- THIS IS THE KEY PART
+      { _id: { $in: ids }, isArchived: true },
       {
         $set: { isArchived: false, ArchivedAt: null },
         $currentDate: { updatedAt: true },
       }
     );
 
-    // Check if any notes were found and modified
-    if (result.matchedCount === 0) {
-      // If no notes matched the query, it means either IDs didn't exist or notes weren't archived
+    // Handle cases where no notes were updated
+    if (!result.matchedCount) {
       return res.status(404).json({
-        message:
-          "No archived notes found with the provided IDs to restore. They might not exist or are already unarchived.",
+        message: "No archived notes found or they are already restored.",
       });
     }
 
-    // Respond with success message, indicating how many notes were actually modified
-    res.status(200).json({
-      message: `${result.modifiedCount} archived note(s) restored successfully!`,
-      restoredCount: result.modifiedCount, // Provide actual count of restored notes
-      matchedCount: result.matchedCount, // Provide actual count of matched notes
+    return res.status(200).json({
+      message: `Successfully restored ${result.modifiedCount} note(s).`,
+      restoredNotes: result.modifiedCount,
     });
   } catch (error) {
-    // Log the detailed error for server-side debugging
-    console.error(`Error restoring multiple archived notes:`, error);
-    // Send a generic 500 error response to the client
-    res.status(500).json({
-      message:
-        "Server error restoring multiple archived notes. Please try again later.",
+    console.error("Error restoring multiple archived notes:", error);
+    return res.status(500).json({
+      message: "Server error: Unable to restore notes. Please try again later.",
     });
   }
 };
@@ -292,55 +284,33 @@ exports.restoreMultipleNotes = async (req, res) => {
 
 exports.restoreSingleNote = async (req, res) => {
   try {
-    const { id } = req.params; // Get the note ID from the URL parameters
+    const { id } = req.params;
 
-    // Basic validation for ID format if needed (e.g., check if it's a valid MongoDB ObjectId)
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid note ID format." });
     }
 
-    // Find the specific archived note by ID and update it
-    // { new: true } returns the document *after* the update
-    const updatedNote = await Addnote.findByIdAndUpdate(
-      { _id: id, isArchived: true }, // Find by ID and ensure it's currently archived
-      {
-        $set: { isArchived: false, ArchivedAt: null }, // Set isArchived to false, clear ArchivedAt
-        $currentDate: { updatedAt: true }, // Update updatedAt
-      },
-      { new: true } // Returns the updated document
-    );
-    // Check if the note was found and actually restored (updatedNote will be null if not found)
-    if (!updatedNote) {
-      return res
-        .status(404) // 404 Not Found is appropriate if the resource doesn't exist or doesn't meet criteria
-        .json({
-          message:
-            "Archived note not found with the provided ID or it was already unarchived.",
-        });
+    const archivedNote = await Archived.findById(id);
+    if (!archivedNote) {
+      return res.status(404).json({ message: "Archived note not found." });
     }
 
-    // Additional check: Although findByIdAndUpdate with {isArchived: true} in query handles it,
-    // this can be a safeguard if logic changes.
-    if (updatedNote.isArchived) {
-      return res.status(500).json({
-        // 500 because the update operation might have failed internally
-        message:
-          "Note could not be properly unarchived. Please check server logs.",
-      });
-    }
+    const restoredNote = await Addnote.create({
+      title: archivedNote.title,
+      notes: archivedNote.notes,
+      color: archivedNote.color,
+      isFavorite: archivedNote.isFavorite || false,
+    });
 
-    res.status(200).json({
+    await Archived.findByIdAndDelete(id);
+
+    return res.status(200).json({
       message: "Archived note restored successfully!",
-      note: updatedNote, // Optionally send the updated note back to the client
+      note: restoredNote,
     });
   } catch (error) {
-    // Log the detailed error for server-side debugging
-    console.error(`Error restoring single archived note:`, error);
-    // Send a generic 500 error response to the client
-    res.status(500).json({
-      message:
-        "Server error restoring single archived note. Please try again later.",
-    });
+    console.error("Error restoring single archived note:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 exports.createFavorite = async (req, res) => {
