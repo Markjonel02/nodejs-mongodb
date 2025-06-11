@@ -15,6 +15,14 @@ const AddnoteSchema = new mongoose.Schema(
       type: String,
       default: "gray.200", // A default color if none is provided
     },
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+    ArchivedAt: {
+      type: Date,
+      default: Date.now(),
+    },
     isFavorite: {
       type: Boolean,
       default: false, // Default value for favorite status

@@ -1,6 +1,8 @@
 const Addnote = require("../models/Addnote");
 const Trashnotes = require("../models/Trash");
 const Archived = require("../models/Archived");
+const Trash = require("../models/Trash");
+const mongoose = require("mongoose");
 // Create a new note
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
@@ -75,6 +77,8 @@ exports.getTrashNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+//Archived  controller section
 exports.updateNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -103,7 +107,6 @@ exports.updateNotes = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 exports.archivedNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,6 +146,171 @@ exports.getArchivedNotes = async (req, res) => {
   } catch (error) {
     console.error("Error fetching archived notes:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+//delete single Archived notes in archivedNotes
+exports.delArchivedNoteSingle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    //always find the id first
+    const archivedNote = await Archived.findById(id);
+
+    if (!archivedNote) {
+      return res.status(404).json({ message: "error" });
+      console.log(`error cannot fint the:${archivedNote}`);
+    }
+    // 2. Create a new document in the Trash collection using the archived note's data
+    // destructure the archivedNote object to get its properties,
+    // excluding _id and __v so Mongoose generates a new _id for the trash document.
+    const trashNote = await Trash.create({
+      ...archivedNote.toObject(), // Convert Mongoose document to a plain JavaScript object
+
+      DeletedAt: new Date(), // Set the deletion timestamp
+    });
+
+    // 3. Delete the original note from the Archived collection
+    await Archived.findByIdAndDelete(id);
+
+    res.status(200).json({
+      mesage: "Archived note moved to trash Successfully!",
+      trashNoteID: trashNote._id, //return new ._id in server
+    });
+  } catch (error) {
+    console.error("Error moving archived note to trash:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+//delete Multiple in Archived notes
+exports.deleteMultipleArchivedNotes = async (req, res) => {
+  try {
+    const { ids } = req.body; // Get the array of note IDs from the request body
+
+    // Validate that IDs are provided and it's an array
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No note IDs provided for deletion." });
+    }
+
+    let movedCount = 0; // Counter for successfully moved notes
+    let failedCount = 0; // Counter for notes that failed to move
+    const failedIds = []; // To store IDs that failed
+
+    // Iterate over each ID sequentially using a for...of loop
+    for (const id of ids) {
+      try {
+        const archivedNote = await Archived.findById(id);
+
+        // Create a new document in T
+        if (archivedNote) {
+          rash;
+          await Trash.create({
+            ...archivedNote.toObject(),
+            deletedAt: new Date(),
+          });
+
+          // Delete from Archived
+          await Archived.findByIdAndDelete(id);
+          movedCount++; // Increment counter for each successful move
+        } else {
+          // If note not found, it's not necessarily a failure but means it wasn't moved
+          console.warn(`Note with ID ${id} not found in Archived collection.`);
+        }
+      } catch (innerError) {
+        // Log individual errors but don't stop the whole batch process
+        console.error(`Error processing note ID ${id}:`, innerError);
+        failedCount++;
+        failedIds.push(id);
+      }
+    }
+
+    // Send a response with the counts of notes moved and any failures
+    res.status(200).json({
+      message: `${movedCount} note(s) moved to trash successfully. ${failedCount} note(s) failed.`,
+      movedCount: movedCount,
+      failedCount: failedCount,
+      failedIds: failedIds, // Optionally send back the IDs that failed
+    });
+  } catch (error) {
+    console.error("Error moving multiple archived notes to trash:", error);
+    // This catch block handles errors that occur outside the loop (e.g., issues with req.body)
+    res
+      .status(500)
+      .json({ message: "Internal server error during batch deletion." });
+  }
+};
+
+//restore multiple
+exports.restoreMultipleNotes = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Validate input: Ensure 'ids' is a non-empty array
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        message: "Invalid request: 'ids' must be a non-empty array.",
+      });
+    }
+
+    // Restore archived notes
+    const result = await Addnote.updateMany(
+      { _id: { $in: ids }, isArchived: true },
+      {
+        $set: { isArchived: false, ArchivedAt: null },
+        $currentDate: { updatedAt: true },
+      }
+    );
+
+    // Handle cases where no notes were updated
+    if (!result.matchedCount) {
+      return res.status(404).json({
+        message: "No archived notes found or they are already restored.",
+      });
+    }
+
+    return res.status(200).json({
+      message: `Successfully restored ${result.modifiedCount} note(s).`,
+      restoredNotes: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error restoring multiple archived notes:", error);
+    return res.status(500).json({
+      message: "Server error: Unable to restore notes. Please try again later.",
+    });
+  }
+};
+
+//restore single notes
+
+exports.restoreSingleNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid note ID format." });
+    }
+
+    const archivedNote = await Archived.findById(id);
+    if (!archivedNote) {
+      return res.status(404).json({ message: "Archived note not found." });
+    }
+
+    const restoredNote = await Addnote.create({
+      title: archivedNote.title,
+      notes: archivedNote.notes,
+      color: archivedNote.color,
+      isFavorite: archivedNote.isFavorite || false,
+    });
+
+    await Archived.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "Archived note restored successfully!",
+      note: restoredNote,
+    });
+  } catch (error) {
+    console.error("Error restoring single archived note:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 exports.createFavorite = async (req, res) => {

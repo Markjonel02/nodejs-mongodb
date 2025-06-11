@@ -428,7 +428,7 @@ const Folders = ({ shouldRefetchNotes }) => {
     if (loading) {
       return (
         <SimpleGrid
-          columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
+          columns={{ base: 1, sm: 2, md: 2, lg: 3 }}
           spacing={4}
           mt={4}
           gap={4}
@@ -512,7 +512,7 @@ const Folders = ({ shouldRefetchNotes }) => {
                         ? note.title.substring(0, 15) + "..."
                         : note.title}
                     </Text>
-                    <Text fontSize="12px" mt={1} mb={4}>
+                    <Text fontSize="0.9em" mt={1} mb={4}>
                       {note.notes.length > 100
                         ? note.notes.substring(0, 100) + "..."
                         : note.notes}
@@ -527,7 +527,7 @@ const Folders = ({ shouldRefetchNotes }) => {
                       mt={2}
                       color="gray.600"
                     >
-                      {new Date(note.createdAt).toLocaleDateString()}
+                      Created: {new Date(note.createdAt).toLocaleDateString()}
                     </Text>
 
                     <Menu>

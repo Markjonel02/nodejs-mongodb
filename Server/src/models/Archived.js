@@ -22,6 +22,10 @@ const ArchivedSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Default value for favorite status
     },
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
     ArchivedAt: {
       type: Date,
       default: Date.now,
