@@ -28,9 +28,19 @@ import {
   FaHeart,
   FaCheckCircle,
   FaExclamationCircle,
-} from "react-icons/fa"; // Import FaCheckCircle and FaExclamationCircle
+  FaRedo, // Import FaRedo for the restore icon
+} from "react-icons/fa";
 
-const NoteCard = ({ note, isSelected, onSelect, onDelete, isDeleting }) => {
+// --- NoteCard Component (No changes needed, looks good!) ---
+const NoteCard = ({
+  note,
+  isSelected,
+  onSelect,
+  onDelete,
+  onRestore,
+  isDeleting,
+  isRestoring,
+}) => {
   return (
     <Card
       key={note._id}
@@ -51,7 +61,17 @@ const NoteCard = ({ note, isSelected, onSelect, onDelete, isDeleting }) => {
         />
       </Flex>
 
-      <Flex position="absolute" top={3} right={3} zIndex={1}>
+      <Flex position="absolute" top={3} right={3} zIndex={1} gap={2}>
+        <IconButton
+          icon={<FaRedo />} // Restore icon
+          aria-label="Restore note"
+          bg={"transparent"}
+          _hover={{ bg: "white", color: "purple.500" }}
+          size="sm"
+          borderRadius="full"
+          onClick={() => onRestore(note._id)}
+          isLoading={isRestoring}
+        />
         <IconButton
           icon={<FaTrashAlt />}
           aria-label="Delete note"
@@ -88,19 +108,22 @@ const NoteCard = ({ note, isSelected, onSelect, onDelete, isDeleting }) => {
   );
 };
 
+// --- Archivednotes Component ---
 const Archivednotes = () => {
   const [archivedNotes, setArchivedNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedNotes, setSelectedNotes] = useState(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState(null);
+  const [noteToRestoreId, setNoteToRestoreId] = useState(null);
   const toast = useToast();
   const cancelRef = useRef();
 
-  // Define a unique toast ID for the "fetch error" to prevent duplicates
-  const fetchErrorToastId = "fetch-error-toast";
+  const fetchErrorToastId = "fetch-error-toast"; // To prevent duplicate toasts for fetch errors
 
+  // Disclosure hooks for dialogs
   const {
     isOpen: isDeleteAllOpen,
     onOpen: onDeleteAllOpen,
@@ -111,32 +134,45 @@ const Archivednotes = () => {
     onOpen: onSingleDeleteOpen,
     onClose: onSingleDeleteClose,
   } = useDisclosure();
+  const {
+    isOpen: isRestoreAllOpen,
+    onOpen: onRestoreAllOpen,
+    onClose: onRestoreAllClose,
+  } = useDisclosure();
+  const {
+    isOpen: isSingleRestoreOpen,
+    onOpen: onSingleRestoreOpen,
+    onClose: onSingleRestoreClose,
+  } = useDisclosure();
 
+  // --- Effects ---
   useEffect(() => {
     fetchArchivedNotes();
   }, []);
 
+  // --- Data Fetching ---
   const fetchArchivedNotes = async () => {
     setLoading(true);
+    setError(null); // Clear previous errors
     try {
       const { data } = await axios.get(
         "http://localhost:5000/api/getarchivenotes"
       );
       setArchivedNotes(data);
     } catch (err) {
+      console.error("Error fetching archived notes:", err); // Log the full error
       setError("Failed to load archived notes.");
-      // Show fetch error toast only if it's not already active
       if (!toast.isActive(fetchErrorToastId)) {
         toast({
-          id: fetchErrorToastId, // Use the unique ID
+          id: fetchErrorToastId,
           title: "Failed to load notes",
           description: "There was an error fetching your archived notes.",
           status: "error",
           position: "top",
-          duration: 5000, // Slightly longer duration
+          duration: 5000,
           isClosable: true,
-          icon: <FaExclamationCircle />, // Add an error icon
-          variant: "left-accent", // A more distinct variant
+          icon: <FaExclamationCircle />,
+          variant: "left-accent",
         });
       }
     } finally {
@@ -144,6 +180,7 @@ const Archivednotes = () => {
     }
   };
 
+  // --- Checkbox Handlers ---
   const handleCheckboxChange = useCallback((id) => {
     setSelectedNotes((prev) => {
       const next = new Set(prev);
@@ -161,9 +198,11 @@ const Archivednotes = () => {
     [archivedNotes]
   );
 
+  // --- Delete Handlers ---
   const handleDeleteSelected = async () => {
-    onDeleteAllClose();
+    onDeleteAllClose(); // Close the dialog immediately
     if (!selectedNotes.size) return;
+
     setIsDeleting(true);
     try {
       await axios.post(
@@ -177,12 +216,14 @@ const Archivednotes = () => {
         position: "top",
         duration: 4000,
         isClosable: true,
-        icon: <FaCheckCircle />, // Add a success icon
-        variant: "solid", // A solid background for success
+        icon: <FaCheckCircle />,
+        variant: "solid",
       });
-      setSelectedNotes(new Set());
-      fetchArchivedNotes();
-    } catch {
+      setSelectedNotes(new Set()); // Clear selection after deletion
+      fetchArchivedNotes(); // Refresh the list of notes
+    } catch (err) {
+      // Catch the actual error object
+      console.error("Error deleting selected notes:", err);
       toast({
         title: "Deletion Failed",
         description: "There was an error deleting the selected notes.",
@@ -191,7 +232,7 @@ const Archivednotes = () => {
         duration: 5000,
         isClosable: true,
         icon: <FaExclamationCircle />,
-        variant: "subtle", // A subtle background for error
+        variant: "subtle",
       });
     } finally {
       setIsDeleting(false);
@@ -199,7 +240,7 @@ const Archivednotes = () => {
   };
 
   const handleDeleteSingleNote = async (id) => {
-    onSingleDeleteClose();
+    onSingleDeleteClose(); // Close the dialog immediately
     setIsDeleting(true);
     try {
       await axios.delete(
@@ -215,13 +256,16 @@ const Archivednotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
+      // Remove the deleted note from selectedNotes if it was selected
       setSelectedNotes((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      fetchArchivedNotes();
-    } catch {
+      fetchArchivedNotes(); // Refresh the list of notes
+    } catch (err) {
+      // Catch the actual error object
+      console.error("Error deleting single note:", err);
       toast({
         title: "Deletion Failed",
         description: "There was an error deleting this note.",
@@ -234,10 +278,109 @@ const Archivednotes = () => {
       });
     } finally {
       setIsDeleting(false);
-      setNoteToDeleteId(null);
+      setNoteToDeleteId(null); // Clear ID after operation
     }
   };
 
+  // --- Restore Handlers ---
+  const handleRestoreSelected = async () => {
+    onRestoreAllClose(); // Close the dialog immediately
+    if (!selectedNotes.size) return;
+
+    setIsRestoring(true);
+    try {
+      // **IMPORTANT:** Use the correct API endpoint for multiple restore
+      // Based on our previous discussion, it should be /api/notes/restore-multiple
+      const response = await axios.put(
+        "http://localhost:5000/api/arcnotes/restore-multiple", // Corrected endpoint
+        { ids: Array.from(selectedNotes) }
+      );
+      toast({
+        title: "Notes Restored",
+        description:
+          response.data.message ||
+          `${selectedNotes.size} note(s) have been restored.`, // Use backend message if available
+        status: "success",
+        position: "top",
+        duration: 4000,
+        isClosable: true,
+        icon: <FaCheckCircle />,
+        variant: "solid",
+      });
+      setSelectedNotes(new Set()); // Clear selection after restoration
+      fetchArchivedNotes(); // Refresh the list of notes
+    } catch (err) {
+      // Catch the actual error object
+      console.error("Error restoring selected notes:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "There was an error restoring the selected notes.";
+      toast({
+        title: "Restore Failed",
+        description: errorMessage,
+        status: "error",
+        position: "top",
+        duration: 5000,
+        isClosable: true,
+        icon: <FaExclamationCircle />,
+        variant: "subtle",
+      });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleRestoreSingleNote = async (id) => {
+    onSingleRestoreClose(); // Close the dialog immediately
+    setIsRestoring(true);
+    try {
+      // **IMPORTANT:** Use the correct API endpoint for single restore
+      // Based on our previous discussion, it should be /api/notes/restore/:id
+      const response = await axios.put(
+        // Use PUT for single resource update/restore
+        `http://localhost:5000/api/arcnotes/restore/${id}` // Corrected endpoint
+      );
+      toast({
+        title: "Note Restored",
+        description:
+          response.data.message || "The note has been successfully restored.", // Use backend message if available
+        status: "success",
+        position: "top",
+        duration: 4000,
+        isClosable: true,
+        icon: <FaCheckCircle />,
+        variant: "solid",
+      });
+      // Remove the restored note from selectedNotes if it was selected
+      setSelectedNotes((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      fetchArchivedNotes(); // Refresh the list of notes
+    } catch (err) {
+      // Catch the actual error object
+      console.error("Error restoring single note:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "There was an error restoring this note.";
+      toast({
+        title: "Restore Failed",
+        description: errorMessage,
+        status: "error",
+        position: "top",
+        duration: 5000,
+        isClosable: true,
+        icon: <FaExclamationCircle />,
+        variant: "subtle",
+      });
+    } finally {
+      setIsRestoring(false);
+      setNoteToRestoreId(null); // Clear ID after operation
+    }
+  };
+
+  // --- Dialog Openers ---
   const openSingleDeleteDialog = useCallback(
     (id) => {
       setNoteToDeleteId(id);
@@ -246,6 +389,15 @@ const Archivednotes = () => {
     [onSingleDeleteOpen]
   );
 
+  const openSingleRestoreDialog = useCallback(
+    (id) => {
+      setNoteToRestoreId(id);
+      onSingleRestoreOpen();
+    },
+    [onSingleRestoreOpen]
+  );
+
+  // --- Memoized Render ---
   const renderedNotes = useMemo(
     () =>
       archivedNotes.map((note) => (
@@ -255,7 +407,9 @@ const Archivednotes = () => {
           isSelected={selectedNotes.has(note._id)}
           onSelect={handleCheckboxChange}
           onDelete={openSingleDeleteDialog}
+          onRestore={openSingleRestoreDialog}
           isDeleting={isDeleting && noteToDeleteId === note._id}
+          isRestoring={isRestoring && noteToRestoreId === note._id}
         />
       )),
     [
@@ -263,22 +417,29 @@ const Archivednotes = () => {
       selectedNotes,
       handleCheckboxChange,
       openSingleDeleteDialog,
+      openSingleRestoreDialog,
       isDeleting,
       noteToDeleteId,
+      isRestoring,
+      noteToRestoreId,
     ]
   );
 
+  // --- Loading and Empty State ---
   if (loading)
     return (
       <Flex justify="center" align="center" minH="50vh">
-        <Spinner size="xl" />
-        <Text ml={4}>Loading archived notes...</Text>
+        <Spinner size="xl" color="purple.500" />
+        <Text ml={4} color="gray.600">
+          Loading archived notes...
+        </Text>
       </Flex>
     );
 
+  // --- Main Component Render ---
   return (
     <Box p={8} bg="gray.50" minH="100vh">
-      <Heading mb={8} textAlign="center">
+      <Heading mb={8} textAlign="center" color="purple.700">
         Your Archived Notes
       </Heading>
 
@@ -304,16 +465,27 @@ const Archivednotes = () => {
           >
             Select All
           </Checkbox>
-          <Button
-            variant="transparent"
-            color="red.300"
-            leftIcon={<FaTrashAlt />}
-            onClick={onDeleteAllOpen}
-            isDisabled={!selectedNotes.size}
-            isLoading={isDeleting}
-          >
-            Delete ({selectedNotes.size})
-          </Button>
+          <Flex gap={4}>
+            <Button
+              colorScheme="purple"
+              leftIcon={<FaRedo />}
+              onClick={onRestoreAllOpen}
+              isDisabled={!selectedNotes.size}
+              isLoading={isRestoring}
+            >
+              Restore Selected ({selectedNotes.size})
+            </Button>
+            <Button
+              variant="ghost" // Use ghost for a less prominent delete button
+              colorScheme="red"
+              leftIcon={<FaTrashAlt />}
+              onClick={onDeleteAllOpen}
+              isDisabled={!selectedNotes.size}
+              isLoading={isDeleting}
+            >
+              Delete ({selectedNotes.size})
+            </Button>
+          </Flex>
         </Flex>
       )}
 
@@ -330,7 +502,7 @@ const Archivednotes = () => {
           shadow="md"
           textAlign="center"
         >
-          <Text fontSize="1em" color="gray.600" fontWeight="semibold">
+          <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
             No archived notes to display.
           </Text>
           {error && (
@@ -341,6 +513,9 @@ const Archivednotes = () => {
         </VStack>
       )}
 
+      {/* --- AlertDialogs for Confirmations --- */}
+
+      {/* AlertDialog for Delete Selected Notes */}
       <AlertDialog
         isOpen={isDeleteAllOpen}
         leastDestructiveRef={cancelRef}
@@ -370,6 +545,7 @@ const Archivednotes = () => {
         </AlertDialogOverlay>
       </AlertDialog>
 
+      {/* AlertDialog for Single Note Deletion */}
       <AlertDialog
         isOpen={isSingleDeleteOpen}
         leastDestructiveRef={cancelRef}
@@ -393,6 +569,65 @@ const Archivednotes = () => {
                 isLoading={isDeleting}
               >
                 Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      {/* AlertDialog for Restore Selected Notes */}
+      <AlertDialog
+        isOpen={isRestoreAllOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onRestoreAllClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader>Restore Selected Notes</AlertDialogHeader>
+            <AlertDialogBody>
+              Are you sure you want to restore {selectedNotes.size} note(s) to
+              your main notes?
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onRestoreAllClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="purple"
+                onClick={handleRestoreSelected}
+                ml={3}
+                isLoading={isRestoring}
+              >
+                Restore
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+
+      {/* AlertDialog for Single Note Restore */}
+      <AlertDialog
+        isOpen={isSingleRestoreOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onSingleRestoreClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader>Restore Note</AlertDialogHeader>
+            <AlertDialogBody>
+              Are you sure you want to restore this note to your main notes?
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onSingleRestoreClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="purple"
+                onClick={() => handleRestoreSingleNote(noteToRestoreId)}
+                ml={3}
+                isLoading={isRestoring}
+              >
+                Restore
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>
