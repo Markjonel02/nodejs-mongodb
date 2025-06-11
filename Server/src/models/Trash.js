@@ -19,6 +19,11 @@ const TrashSchema = new mongoose.Schema(
       type: Boolean,
       default: false, // Default value for favorite status
     },
+    archivedAt: {
+      // Keep this from the original archived note
+      type: Date,
+      default: Date.now,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
