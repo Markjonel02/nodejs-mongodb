@@ -115,25 +115,27 @@ exports.archivedNotes = async (req, res) => {
       return res.status(400).json({ message: "Note ID is Required!" });
     }
 
-    //find notes before deleting
-    const noteArchive = await Addnote.findById(id);
-    if (!noteArchive) {
-      return res.status(404).json({ message: "Note could note be Found!" });
+    // Find the note before archiving
+    const noteToArchive = await Addnote.findById(id);
+    if (!noteToArchive) {
+      return res.status(404).json({ message: "Note could not be Found!" });
     }
-    //mobe and create collection
-    await Archived.create(noteArchive.toObject());
 
+    // Prepare the note for archiving: set isArchived to true and ArchivedAt to now
+    const archivedNoteData = noteToArchive.toObject();
+    archivedNoteData.isArchived = true;
+    archivedNoteData.ArchivedAt = new Date(); // Set current date and time
+
+    // Move and create collection in Archived
+    await Archived.create(archivedNoteData);
+
+    // Delete the note from Addnote collection
     await Addnote.findByIdAndDelete(id);
-
-    // Check if any document was actually deleted
-    if (noteArchive === 0) {
-      return res.status(404).json({ message: "Note not Found!" });
-    }
 
     // If successful, send a success message.
     return res.status(200).json({ message: "Successfully moved to Archived!" });
   } catch (error) {
-    console.error("Error Deleting notes:", error);
+    console.error("Error archiving notes:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -245,41 +247,61 @@ exports.restoreMultipleNotes = async (req, res) => {
   try {
     const { ids } = req.body;
 
-    // Validate input: Ensure 'ids' is a non-empty array
-    if (!Array.isArray(ids) || ids.length === 0) {
+    // 1. Input Validation: Ensure 'ids' is a valid array
+    if (
+      !Array.isArray(ids) ||
+      ids.length === 0 ||
+      !ids.every((id) => typeof id === "string")
+    ) {
       return res.status(400).json({
-        message: "Invalid request: 'ids' must be a non-empty array.",
+        message:
+          "Invalid request: 'ids' must be a non-empty array of note IDs.",
       });
     }
 
-    // Restore archived notes
-    const result = await Addnote.updateMany(
-      { _id: { $in: ids }, isArchived: true },
-      {
-        $set: { isArchived: false, ArchivedAt: null },
-        $currentDate: { updatedAt: true },
-      }
-    );
+    // 2. Find and Prepare Notes for Restoration:
+    //    Fetch notes from Archived collection and prepare them for Addnote collection.
+    const notesToRestore = await Archived.find({ _id: { $in: ids } }).lean(); // .lean() for plain JS objects
 
-    // Handle cases where no notes were updated
-    if (!result.matchedCount) {
+    if (notesToRestore.length === 0) {
       return res.status(404).json({
-        message: "No archived notes found or they are already restored.",
+        message: "No archived notes found with the provided IDs.",
       });
     }
 
+    const restoredNotesData = notesToRestore.map((note) => ({
+      ...note, // Spread existing note properties
+      _id: undefined, // Let Mongoose generate a new _id for Addnote
+      isArchived: false,
+      ArchivedAt: null,
+      updatedAt: new Date(),
+    }));
+
+    // 3. Move Notes to Addnote Collection:
+    //    Insert all prepared notes into the Addnote collection.
+    await Addnote.insertMany(restoredNotesData);
+
+    // 4. Delete Notes from Archived Collection:
+    //    Remove the notes from the Archived collection.
+    await Archived.deleteMany({ _id: { $in: ids } });
+
+    // 5. Success Response:
     return res.status(200).json({
-      message: `Successfully restored ${result.modifiedCount} note(s).`,
-      restoredNotes: result.modifiedCount,
+      message: `Successfully restored ${notesToRestore.length} note(s).`,
+      restoredCount: notesToRestore.length,
     });
   } catch (error) {
     console.error("Error restoring multiple archived notes:", error);
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid note ID format provided.",
+      });
+    }
     return res.status(500).json({
       message: "Server error: Unable to restore notes. Please try again later.",
     });
   }
 };
-
 //restore single notes
 
 exports.restoreSingleNote = async (req, res) => {
@@ -313,6 +335,7 @@ exports.restoreSingleNote = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.createFavorite = async (req, res) => {
   try {
     const { id } = req.params; // Get the note ID from the URL parameters

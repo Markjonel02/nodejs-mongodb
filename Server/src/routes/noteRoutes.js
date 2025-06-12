@@ -23,7 +23,7 @@ router.post(
 router.get("/getarchivenotes", noteController.getArchivedNotes);
 
 // --- NEW RESTORE ROUTES ---
-router.post("/arcnotes/restore-multiple", noteController.restoreMultipleNotes);
+router.put("/arcnotes/restore-multiple", noteController.restoreMultipleNotes);
 // Route for restoring a single note
 router.put("/arcnotes/restore/:id", noteController.restoreSingleNote); // Using PUT for idempotent update
 

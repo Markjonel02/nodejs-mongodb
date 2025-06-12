@@ -21,7 +21,7 @@ const AddnoteSchema = new mongoose.Schema(
     },
     ArchivedAt: {
       type: Date,
-      default: Date.now(),
+      default: null,
     },
     isFavorite: {
       type: Boolean,
@@ -31,7 +31,12 @@ const AddnoteSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
+
   {
     timestamps: true,
   }

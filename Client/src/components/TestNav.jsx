@@ -178,7 +178,7 @@ const Sidebar = ({ onNoteAdded }) => {
       {/* Main Sidebar Container */}
       <Box
         // Adjust width based on collapsed state (80px for collapsed, 320px for expanded)
-        w={actualCollapsedState ? "80px" : "350px"}
+        w={actualCollapsedState ? "80px" : "250px"}
         bg="white"
         // No right border on small screens when it's an overlay
         borderRight={isSmallScreen ? "none" : "1px solid #e2e8f0"}
