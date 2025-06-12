@@ -291,7 +291,7 @@ const Archivednotes = () => {
     try {
       // **IMPORTANT:** Use the correct API endpoint for multiple restore
       // Based on our previous discussion, it should be /api/notes/restore-multiple
-      const response = await axios.post(
+      const response = await axios.put(
         "http://localhost:5000/api/arcnotes/restore-multiple", // Corrected endpoint
         { ids: Array.from(selectedNotes) }
       );
@@ -467,13 +467,13 @@ const Archivednotes = () => {
           </Checkbox>
           <Flex gap={4}>
             <Button
-              colorScheme="purple"
+              variant="ghost"
               leftIcon={<FaRedo />}
               onClick={onRestoreAllOpen}
               isDisabled={!selectedNotes.size}
               isLoading={isRestoring}
             >
-              Restore Selected ({selectedNotes.size})
+              Restore ({selectedNotes.size})
             </Button>
             <Button
               variant="ghost" // Use ghost for a less prominent delete button
