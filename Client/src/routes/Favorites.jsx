@@ -177,9 +177,12 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       // Assuming an API endpoint to unfavorite multiple notes
-      await axios.put("http://localhost:5000/api/notes/unfavorite-multiple", {
-        ids: Array.from(selectedNotes),
-      });
+      await axios.put(
+        "http://localhost:5000/api/favorites/multiple-unfavorite",
+        {
+          ids: Array.from(selectedNotes),
+        }
+      );
       toast({
         title: "Notes Unfavorited",
         description: `${selectedNotes.size} note(s) have been unfavorited.`,
@@ -217,9 +220,12 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       // API endpoint to toggle favorite status for a single note
-      await axios.put(`http://localhost:5000/api/notes/toggle-favorite/${id}`, {
-        isFavorite: !currentFavoriteStatus, // Send the new status
-      });
+      await axios.post(
+        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
+        {
+          isFavorite: !currentFavoriteStatus, // Send the new status
+        }
+      );
       toast({
         title: currentFavoriteStatus ? "Note Unfavorited" : "Note Favorited",
         description: currentFavoriteStatus
@@ -337,7 +343,7 @@ const Favorites = () => {
           </Checkbox>
           <Flex gap={4}>
             <Button
-              variant="ghost"
+              variant="red"
               leftIcon={<FaRegHeart />}
               onClick={onUnfavoriteAllOpen}
               isDisabled={!selectedNotes.size}
