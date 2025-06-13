@@ -541,7 +541,7 @@ exports.createFavorite = async (req, res) => {
   }
 };
 
-const getFavoriteById = async (req, res) => {
+exports.getFavorite = async (req, res) => {
   try {
     const favoriteNotes = await Addnote.find({ isFavorite: true });
     res.status(200).json(favoriteNotes);

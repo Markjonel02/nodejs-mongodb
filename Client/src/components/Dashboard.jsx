@@ -9,6 +9,7 @@ import Skeletons from "./Spinner";
 const ArchiveComponent = lazy(() => import("../routes/Archivednotes"));
 const TestFolder = lazy(() => import("../routes/TestFolder"));
 const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
+const Favorites = lazy(() => import("../routes/Favorites"));
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
@@ -36,7 +37,7 @@ const Dashboard = () => {
             {/* Add other routes as needed */}
             <Route path="/calendar" element={<div>Calendar View</div>} />
             <Route path="/trash" element={<TrashRoutes />} />
-            <Route path="/favorites" element={<div>Favorites View</div>} />
+            <Route path="/favorites" element={<Favorites />} />
           </Routes>
         </Suspense>
       </Box>
