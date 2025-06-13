@@ -66,7 +66,7 @@ exports.delNotes = async (req, res) => {
   }
 };
 
-//delete trash permanently
+// --- DELETE TRASH PERMANENTLY ---
 exports.delPermanently = async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,6 +95,42 @@ exports.delPermanently = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Internal server error. Please try again later." });
+  }
+};
+
+exports.delPermanentlyMultiple = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // Validate that IDs are provided and it's an array
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No valid note IDs provided for deletion." });
+    }
+
+    // Validate all IDs are valid MongoDB ObjectId formats
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+    if (validIds.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "None of the provided IDs are valid." });
+    }
+
+    // Perform bulk delete operation
+    const deleteResult = await Trash.deleteMany({ _id: { $in: validIds } });
+
+    return res.status(200).json({
+      message: `${deleteResult.deletedCount} note(s) permanently deleted.`,
+      deletedCount: deleteResult.deletedCount,
+      invalidIds: ids.filter((id) => !validIds.includes(id)), // Return invalid IDs for reference
+    });
+  } catch (error) {
+    console.error("Error permanently deleting multiple notes:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error during batch deletion." });
   }
 };
 
@@ -307,6 +343,7 @@ exports.restoreMultipleNotes = async (req, res) => {
       isArchived: false,
       ArchivedAt: null,
       updatedAt: new Date(),
+      createdAt: note.createdAt,
     }));
 
     // 3. Move Notes to Addnote Collection:
@@ -335,7 +372,6 @@ exports.restoreMultipleNotes = async (req, res) => {
   }
 };
 //restore single notes
-
 exports.restoreSingleNote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -354,6 +390,7 @@ exports.restoreSingleNote = async (req, res) => {
       notes: archivedNote.notes,
       color: archivedNote.color,
       isFavorite: archivedNote.isFavorite || false,
+      createdAt: archivedNote.createdAt, // Retain original creation date
     });
 
     await Archived.findByIdAndDelete(id);

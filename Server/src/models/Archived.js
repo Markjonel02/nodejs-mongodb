@@ -28,7 +28,7 @@ const ArchivedSchema = new mongoose.Schema(
     },
     ArchivedAt: {
       type: Date,
-      default: Date,
+      default: Date.now,
     },
     updatedAt: {
       type: Date,

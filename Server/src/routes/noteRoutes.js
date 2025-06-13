@@ -11,6 +11,7 @@ router.put("/updatenotes/:id", noteController.updateNotes);
 router.get("/trashview", noteController.getTrashNotes);
 router.delete("/trashdelete/:id", noteController.delPermanently);
 router.delete("/delnotes/:id", noteController.delNotes);
+router.delete("/delpermanentmutiple", noteController.delPermanentlyMultiple);
 // --- ARCHIVED NOTES ---
 router.delete("/archivednotes/:id", noteController.archivedNotes);
 router.delete(
