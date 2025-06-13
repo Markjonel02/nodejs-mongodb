@@ -34,6 +34,10 @@ const ArchivedSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    deletedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

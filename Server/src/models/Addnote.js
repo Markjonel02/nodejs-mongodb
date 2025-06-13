@@ -43,3 +43,4 @@ const AddnoteSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Addnote", AddnoteSchema);
+                                         

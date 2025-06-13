@@ -7,9 +7,13 @@ router.get("/getnotes", noteController.getNotes);
 router.put("/updatenotes/:id", noteController.updateNotes);
 
 // --- DELETE & TRASH ---
-router.get("/getdeltotrash", noteController.getTrashNotes);
+
 router.get("/trashview", noteController.getTrashNotes);
+router.delete("/trashdelete/:id", noteController.delPermanently);
 router.delete("/delnotes/:id", noteController.delNotes);
+router.delete("/delpermanentmutiple", noteController.delPermanentlyMultiple);
+router.post("/restore-single-trash/:id", noteController.restoreSingleNotetrash);
+router.put("/restore-multiple-trash/", noteController.restoreMultipleTrash);
 // --- ARCHIVED NOTES ---
 router.delete("/archivednotes/:id", noteController.archivedNotes);
 router.delete(

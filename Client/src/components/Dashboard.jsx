@@ -8,7 +8,7 @@ import Skeletons from "./Spinner";
 // Lazily load the Archive component
 const ArchiveComponent = lazy(() => import("../routes/Archivednotes"));
 const TestFolder = lazy(() => import("../routes/TestFolder"));
-
+const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
@@ -35,7 +35,7 @@ const Dashboard = () => {
             <Route path="/archive" element={<ArchiveComponent />} />
             {/* Add other routes as needed */}
             <Route path="/calendar" element={<div>Calendar View</div>} />
-            <Route path="/trash" element={<div>Trash View</div>} />
+            <Route path="/trash" element={<TrashRoutes />} />
             <Route path="/favorites" element={<div>Favorites View</div>} />
           </Routes>
         </Suspense>
