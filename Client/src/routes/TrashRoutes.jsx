@@ -206,10 +206,11 @@ const Trashnotes = () => {
 
     setIsDeleting(true);
     try {
-      await axios.post(
-        "http://localhost:5000/api/trashnotes/delete-multiple", // New API endpoint for permanent deletion
-        { ids: Array.from(selectedNotes) }
-      );
+      await axios.delete("http://localhost:5000/api/delpermanentmutiple", {
+        data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
+        headers: { "Content-Type": "application/json" }, // Explicitly set headers
+      });
+
       toast({
         title: "Notes Permanently Deleted",
         description: `${selectedNotes.size} note(s) have been permanently deleted from trash.`,
@@ -220,6 +221,7 @@ const Trashnotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
+
       setSelectedNotes(new Set());
       fetchTrashedNotes();
     } catch (err) {
@@ -289,7 +291,7 @@ const Trashnotes = () => {
     setIsRestoring(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/api/notes/restore-multiple", // API endpoint to restore from trash to main notes
+        "http://localhost:5000/api/restore-multiple-trash", // API endpoint to restore from trash to main notes
         { ids: Array.from(selectedNotes) }
       );
       toast({
@@ -325,13 +327,12 @@ const Trashnotes = () => {
       setIsRestoring(false);
     }
   };
-
   const handleRestoreSingleNote = async (id) => {
     onSingleRestoreClose();
     setIsRestoring(true);
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/notes/restore/${id}` // API endpoint to restore single note from trash
+      const response = await axios.post(
+        `http://localhost:5000/api/restore-single-trash/${id}` // API endpoint to restore single note from trash
       );
       toast({
         title: "Note Restored",

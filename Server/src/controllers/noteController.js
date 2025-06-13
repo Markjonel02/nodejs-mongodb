@@ -97,7 +97,6 @@ exports.delPermanently = async (req, res) => {
       .json({ message: "Internal server error. Please try again later." });
   }
 };
-
 exports.delPermanentlyMultiple = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -134,6 +133,112 @@ exports.delPermanentlyMultiple = async (req, res) => {
   }
 };
 
+// --- RESTORE TO NOTES (Single Note from Trash) ---
+exports.restoreSingleNotetrash = async (req, res) => {
+  try {
+    const { id } = req.params; // Get the ID of the note to restore from the URL parameters
+
+    // 1. Find the note in the Trash collection
+    const trashNote = await Trash.findById(id);
+
+    // If no note is found in trash with the given ID, return a 404 error
+    if (!trashNote) {
+      return res.status(404).json({ message: "Note not found in trash." });
+    }
+
+    // 2. Create a new Addnote instance with the data from the trash note
+    // We carefully select the fields relevant for Addnote, resetting 'isArchived' and 'ArchivedAt'
+    const newAddnote = new Addnote({
+      title: trashNote.title,
+      notes: trashNote.notes,
+      color: trashNote.color,
+      isFavorite: trashNote.isFavorite,
+      isArchived: false, // When restoring, it should no longer be archived
+      ArchivedAt: null, // Reset ArchivedAt
+      createdAt: new Date(), // Set a new createdAt timestamp for the restored note
+      updatedAt: new Date(), // Set a new updatedAt timestamp
+    });
+
+    // Save the new note to the Addnote collection
+    const restoredNote = await newAddnote.save();
+
+    // 3. Delete the original note from the Trash collection
+    await Trash.findByIdAndDelete(id);
+
+    // Respond with a success message and the newly restored note
+    res.status(200).json({
+      message: "Note restored successfully!",
+      note: restoredNote,
+    });
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.error("Error restoring note:", error);
+    res.status(500).json({
+      message: "Server error while restoring note.",
+      error: error.message,
+    });
+  }
+};
+exports.restoreMultipleTrash = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // 1. Input Validation: Ensure 'ids' is a valid array
+    if (
+      !Array.isArray(ids) ||
+      ids.length === 0 ||
+      !ids.every((id) => typeof id === "string")
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid request: 'ids' must be a non-empty array of note IDs.",
+      });
+    }
+
+    // 2. Find and Prepare Notes for Restoration:
+    //    Fetch notes from Archived collection and prepare them for Addnote collection.
+    const noteTrash = await Trash.find({ _id: { $in: ids } }).lean(); // .lean() for plain JS objects
+
+    if (noteTrash.length === 0) {
+      return res.status(404).json({
+        message: "No archived notes found with the provided IDs.",
+      });
+    }
+
+    const restoredNotesData = noteTrash.map((note) => ({
+      ...note, // Spread existing note properties
+      _id: undefined, // Let Mongoose generate a new _id for Addnote
+      isArchived: false,
+      ArchivedAt: null,
+      updatedAt: new Date(),
+      createdAt: note.createdAt,
+    }));
+
+    // 3. Move Notes to Addnote Collection:
+    //    Insert all prepared notes into the Addnote collection.
+    await Addnote.insertMany(restoredNotesData);
+
+    // 4. Delete Notes from Archived Collection:
+    //    Remove the notes from the Archived collection.
+    await Trash.deleteMany({ _id: { $in: ids } });
+
+    // 5. Success Response:
+    return res.status(200).json({
+      message: `Successfully restored ${noteTrash.length} note(s).`,
+      restoredCount: noteTrash.length,
+    });
+  } catch (error) {
+    console.error("Error restoring multiple Trash notes:", error);
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        message: "Invalid note ID format provided.",
+      });
+    }
+    return res.status(500).json({
+      message: "Server error: Unable to restore notes. Please try again later.",
+    });
+  }
+};
 //getting deleted notes from trash
 exports.getTrashNotes = async (req, res) => {
   try {
