@@ -28,7 +28,7 @@ const TrashSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    DeletedAt: {
+    deletedAt: {
       type: Date,
       default: Date.now,
     },

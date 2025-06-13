@@ -66,6 +66,38 @@ exports.delNotes = async (req, res) => {
   }
 };
 
+//delete trash permanently
+exports.delPermanently = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID presence
+    if (!id) {
+      return res.status(400).json({ message: "ID is required!" });
+    }
+
+    // Check if the note exists before deletion
+    const tDelete = await Trash.findById(id);
+    if (!tDelete) {
+      return res
+        .status(404)
+        .json({ message: "No trash note found with the given ID!" });
+    }
+
+    // Delete the trash note
+    await Trash.findByIdAndDelete(id);
+
+    return res
+      .status(200)
+      .json({ message: "Trash note deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting trash note:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error. Please try again later." });
+  }
+};
+
 //getting deleted notes from trash
 exports.getTrashNotes = async (req, res) => {
   try {
