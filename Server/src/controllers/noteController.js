@@ -155,7 +155,7 @@ exports.restoreSingleNotetrash = async (req, res) => {
       isFavorite: trashNote.isFavorite,
       isArchived: false, // When restoring, it should no longer be archived
       ArchivedAt: null, // Reset ArchivedAt
-      createdAt: new Date(), // Set a new createdAt timestamp for the restored note
+      createdAt: trashNote.createdAt, // Set a new createdAt timestamp for the restored note
       updatedAt: new Date(), // Set a new updatedAt timestamp
     });
 
