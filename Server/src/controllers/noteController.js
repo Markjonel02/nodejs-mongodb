@@ -512,33 +512,35 @@ exports.restoreSingleNote = async (req, res) => {
 
 exports.createFavorite = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { isFavorite } = req.body;
+    const { id } = req.params; // Expects ID from URL param
+    const { isFavorite } = req.body; // Expects the new status from body
 
+    // --- This is where "multiple-unfavorite" is being treated as an ID ---
     console.log(`Request received to toggle favorite for note ID: ${id}`);
     console.log(`New isFavorite status: ${isFavorite}`);
 
-    // Find the note by ID and update its isFavorite status
-    const updatedNote = await Addnote.findByIdAndUpdate(
-      id,
-      { isFavorite: isFavorite },
-      { new: true }
-    );
-
-    if (!updatedNote) {
-      console.log(`Note with ID: ${id} not found.`);
-      return res.status(404).json({ message: "Note not found." });
+    if (!id) {
+      return res.status(400).json({ message: "Note ID is required." });
     }
 
-    console.log("Note favorite status updated successfully:", updatedNote);
+    const note = await Addnote.findByIdAndUpdate(
+      id, // Mongoose is trying to cast "multiple-unfavorite" to an ObjectId here
+      { $set: { isFavorite: isFavorite } },
+      { new: true, runValidators: true }
+    );
 
-    res.status(200).json({
-      message: "Note favorite status updated successfully",
-      updatedNote,
-    });
+    if (!note) {
+      return res.status(404).json({ message: "Note not found." });
+    }
+    res.status(200).json(note);
   } catch (error) {
     console.error("Error in createFavorite controller:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    if (error.name === "CastError" && error.kind === "ObjectId") {
+      return res
+        .status(400)
+        .json({ message: "Invalid Note ID format.", error: error.message });
+    }
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 exports.getFavoriteNotes = async (req, res) => {
@@ -603,20 +605,51 @@ exports.unfavoriteSingle = async (req, res) => {
 
 exports.unfavoriteMultiple = async (req, res) => {
   try {
+    const { ids } = req.body; // Expecting 'ids' as per your frontend
+
+    // --- Debugging step: Log incoming data ---
+    console.log("Received multiple-unfavorite request.");
+    console.log("Request Body:", req.body);
+    console.log("IDs to unfavorite:", ids);
+    // --- End Debugging step ---
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      console.log("Validation Error: No IDs or invalid IDs array provided.");
+      return res
+        .status(400)
+        .json({ message: "An array of note IDs ('ids') is required." });
+    }
+
+    // Mongoose will automatically cast valid string IDs to ObjectIds
     const result = await Addnote.updateMany(
-      { isFavorite: true },
-      { $set: { isFavorite: false } }
+      { _id: { $in: ids } }, // Match documents where _id is in the provided 'ids' array
+      { $set: { isFavorite: false } } // Set isFavorite to false
     );
-    console.log(
-      `Unfavorited all items. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
-    );
-    res.status().json({
-      message: `Successfully unfavorited all items.${result.modifiedCount} notes.`,
-      totalMatched: result.matchedCount,
-      totalUnfavorited: result.modifiedCount,
+
+    console.log("Mongoose updateMany result:", result);
+
+    if (result.matchedCount === 0) {
+      console.log("No notes found for the provided IDs.");
+      // It's not necessarily a 404 if some IDs were valid but none matched due to prior unfavorite
+      // A 200 with 0 modifiedCount is often acceptable here, but 404 is also okay.
+      return res.status(200).json({
+        message:
+          "No notes found with the provided IDs to unfavorite, or they were already unfavorited.",
+        modifiedCount: 0,
+      });
+    }
+
+    res.status(200).json({
+      message: `${result.modifiedCount} note(s) successfully unfavorited.`,
+      modifiedCount: result.modifiedCount,
     });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).json({});
+    // Log the full error for server-side debugging
+    console.error("Critical Error in /multiple-unfavorite route:", error);
+    // Send a generic error message to the client for security
+    res.status(500).json({
+      message: "Internal server error occurred while unfavoriting notes.",
+      error: error.message,
+    });
   }
 };

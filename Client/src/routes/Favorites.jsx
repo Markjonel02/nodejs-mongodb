@@ -195,18 +195,23 @@ const Favorites = () => {
 
   // --- Favorite Toggle Handlers ---
   const handleToggleFavoriteSelected = async () => {
-    onUnfavoriteAllClose();
-    if (!selectedNotes.size) return;
+    onUnfavoriteAllClose(); // Close any related modals/drawers
+    if (!selectedNotes.size) {
+      // No notes selected, do nothing
+      return;
+    }
 
-    setIsTogglingFavorite(true);
+    setIsTogglingFavorite(true); // Indicate that an operation is in progress
     try {
-      // Assuming an API endpoint to unfavorite multiple notes
+      // Frontend sends 'ids' in the request body, which matches the modified backend
       await axios.put(
         "http://localhost:5000/api/favorites/multiple-unfavorite",
         {
-          ids: Array.from(selectedNotes),
+          ids: Array.from(selectedNotes), // Convert Set to Array
         }
       );
+
+      // Success Toast
       toast({
         title: "Notes Unfavorited",
         description: `${selectedNotes.size} note(s) have been unfavorited.`,
@@ -217,13 +222,16 @@ const Favorites = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
-      setSelectedNotes(new Set());
-      fetchFavoriteNotes(); // Refetch to update the list
+
+      setSelectedNotes(new Set()); // Clear selected notes after successful unfavorite
+      fetchFavoriteNotes(); // Refetch to update the list, showing the changes
     } catch (err) {
       console.error("Error unfavoriting selected notes:", err);
       const errorMessage =
-        err.response?.data?.message ||
+        err.response?.data?.message || // Get specific message from backend if available
         "There was an error unfavoriting the selected notes.";
+
+      // Error Toast
       toast({
         title: "Unfavorite Failed",
         description: errorMessage,
@@ -235,7 +243,7 @@ const Favorites = () => {
         variant: "subtle",
       });
     } finally {
-      setIsTogglingFavorite(false);
+      setIsTogglingFavorite(false); // Reset loading state
     }
   };
 
