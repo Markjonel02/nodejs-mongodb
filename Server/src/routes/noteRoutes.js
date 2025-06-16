@@ -33,5 +33,7 @@ router.put("/arcnotes/restore/:id", noteController.restoreSingleNote); // Using 
 
 //--- FAVORITES ROUTES ---
 router.put("/favorites/:id", noteController.createFavorite);
-
+router.get("/getfavorites", noteController.getFavoriteNotes);
+router.put("/favorites/single-unfavorite/:id", noteController.unfavoriteSingle);
+router.put("/favorites/multiple-unfavorite", noteController.unfavoriteMultiple);
 module.exports = router;
