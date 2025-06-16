@@ -205,7 +205,7 @@ const Favorites = () => {
     try {
       // Frontend sends 'ids' in the request body, which matches the modified backend
       await axios.put(
-        "http://localhost:5000/api/favorites/multiple-unfavorite",
+        "http://localhost:5000/api/favorite/multiple-unfavorite",
         {
           ids: Array.from(selectedNotes), // Convert Set to Array
         }
