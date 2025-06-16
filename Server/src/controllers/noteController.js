@@ -512,8 +512,8 @@ exports.restoreSingleNote = async (req, res) => {
 
 exports.createFavorite = async (req, res) => {
   try {
-    const { id } = req.params; // Get the note ID from the URL parameters
-    const { isFavorite } = req.body; // Get the new favorite status from the request body
+    const { id } = req.params;
+    const { isFavorite } = req.body;
 
     console.log(`Request received to toggle favorite for note ID: ${id}`);
     console.log(`New isFavorite status: ${isFavorite}`);
@@ -522,7 +522,7 @@ exports.createFavorite = async (req, res) => {
     const updatedNote = await Addnote.findByIdAndUpdate(
       id,
       { isFavorite: isFavorite },
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!updatedNote) {
@@ -531,27 +531,29 @@ exports.createFavorite = async (req, res) => {
     }
 
     console.log("Note favorite status updated successfully:", updatedNote);
+
     res.status(200).json({
       message: "Note favorite status updated successfully",
       updatedNote,
     });
   } catch (error) {
-    console.error("Error in toggleFavorite controller:", error);
+    console.error("Error in createFavorite controller:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-exports.getFavorite = async (req, res) => {
+exports.getFavoriteNotes = async (req, res) => {
   try {
-    // Fetch all notes where isFavorite is true
-    const favoriteNotes = await Addnote.find({ isFavorite: true }).lean(); // Convert to plain object
+    console.log("Fetching favorite notes...");
+
+    const favoriteNotes = await Addnote.find({ isFavorite: true }).lean();
 
     if (!favoriteNotes || favoriteNotes.length === 0) {
-      return res.status(404).json({ message: "No favorite notes found." });
+      console.log("No favorite notes found. Returning empty array.");
+      // Change: Return 200 OK with an empty array instead of 404
+      return res.status(200).json([]); // <--- FIXED HERE
     }
 
-    // Debugging: Log retrieved notes before sending response
     console.log("Retrieved favorite notes:", favoriteNotes);
-
     res.status(200).json(favoriteNotes);
   } catch (error) {
     console.error("Error fetching favorite notes:", error);
@@ -563,82 +565,58 @@ exports.unfavoriteSingle = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid Id Format" });
-    }
-    const note = await Addnote.findById(id);
-    if (!note) {
-      return res.status(404).json({ message: "Note note Found!" });
-    }
-    if (!note.isFavorite) {
-      res
-        .status(200)
-        .json({ message: `Note with Id ${id} is already unfavorited`, note });
+    console.log(`[INFO] Request received to unfavorite note ID: ${id}`);
+
+    // Validate ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log(`[ERROR] Invalid ID format: ${id}`);
+      return res.status(400).json({ message: "Invalid note ID format." });
     }
 
-    note.isFavorite = false;
-    await note.save(); //save updated notes
-    console.log(`Note ${id} unfavorited`);
+    // Update isFavorite to false and return updated document
+    const note = await Addnote.findByIdAndUpdate(
+      id,
+      { isFavorite: false },
+      { new: true }
+    );
+
+    if (!note) {
+      console.log(`[ERROR] Note with ID ${id} not found.`);
+      return res.status(404).json({ message: "Note not found." });
+    }
+
+    // Fetch remaining favorite notes
+    const favoriteNotes = await Addnote.find({ isFavorite: true }).lean();
+
+    console.log(`[SUCCESS] Note ${id} unfavorited successfully.`);
 
     res.status(200).json({
-      message: `Note with Ids ${id} has been successfully unfavorited! `,
+      message: `Note with ID ${id} has been unfavorited successfully.`,
+      unfavoritedNote: note,
+      favoriteNotes,
     });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).json({ message: "internal server error!" });
+    console.error("[ERROR] unfavoriteNote controller:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 exports.unfavoriteMultiple = async (req, res) => {
   try {
-    const { noteIds } = req.body; // Expecting an array of note IDs from the request body
-
-    // Input validation: Check if noteIds is provided and is an array
-    if (!noteIds || !Array.isArray(noteIds) || noteIds.length === 0) {
-      return res.status(400).json({
-        message: "Please provide an array of note IDs to unfavorite.",
-      });
-    }
-
-    // Update notes whose _id is in the provided noteIds array
     const result = await Addnote.updateMany(
-      { _id: { $in: noteIds }, isFavorite: true }, // Find notes with IDs in the list AND are currently favorited
-      { $set: { isFavorite: false } } // Set isFavorite to false
+      { isFavorite: true },
+      { $set: { isFavorite: false } }
     );
-
     console.log(
-      `Unfavorited specific items. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
+      `Unfavorited all items. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`
     );
-
-    // If no notes were modified, it's possible they were already unfavorited or IDs were invalid
-    if (result.modifiedCount === 0 && result.matchedCount > 0) {
-      return res.status(200).json({
-        message: `Notes found but none were unfavorited (possibly already unfavorited).`,
-        totalMatched: result.matchedCount,
-        totalUnfavorited: result.modifiedCount,
-      });
-    } else if (result.modifiedCount === 0 && result.matchedCount === 0) {
-      return res.status(404).json({
-        message: "No matching notes found for the provided IDs.",
-        totalMatched: result.matchedCount,
-        totalUnfavorited: result.modifiedCount,
-      });
-    }
-
-    res.status(200).json({
-      message: `Successfully unfavorited ${result.modifiedCount} notes.`,
+    res.status().json({
+      message: `Successfully unfavorited all items.${result.modifiedCount} notes.`,
       totalMatched: result.matchedCount,
       totalUnfavorited: result.modifiedCount,
     });
   } catch (error) {
-    console.error("Error unfavoriting multiple notes:", error);
-    // More specific error handling for invalid ID format if using Mongoose/MongoDB ObjectId
-    if (error.name === "CastError" && error.kind === "ObjectId") {
-      return res
-        .status(400)
-        .json({ message: "One or more provided note IDs are invalid." });
-    }
-    res
-      .status(500)
-      .json({ message: "Internal server error during unfavorite operation." });
+    console.error(error.message);
+    res.status(500).json({});
   }
 };

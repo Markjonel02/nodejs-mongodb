@@ -123,21 +123,45 @@ const Favorites = () => {
   }, []);
 
   // --- Data Fetching ---
+
   const fetchFavoriteNotes = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming an API endpoint to get only favorite notes
-      const { data } = await axios.get("http://localhost:5000/api/favorites");
+      // This URL must match your backend's route
+      const { data } = await axios.get(
+        "http://localhost:5000/api/getfavorites"
+      );
       setFavoriteNotes(data);
     } catch (err) {
       console.error("Error fetching favorite notes:", err);
-      setError("Failed to load favorite notes.");
+
+      // Enhanced logging for debugging Axios errors
+      if (err.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Server responded with error:", err.response.data);
+        console.error("Status:", err.response.status);
+        console.error("Headers:", err.response.headers);
+      } else if (err.request) {
+        // The request was made but no response was received
+        // `error.request` is an instance of XMLHttpRequest in the browser and an http.ClientRequest in node.js
+        console.error("No response received from server:", err.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.error("Error setting up request:", err.message);
+      }
+      console.error("Axios config:", err.config);
+
+      const errorMessage =
+        err.response?.data?.message ||
+        "There was an error fetching your favorite notes.";
+      setError("Failed to load favorite notes."); // Keep the generic error for display
       if (!toast.isActive(fetchErrorToastId)) {
         toast({
           id: fetchErrorToastId,
           title: "Failed to load notes",
-          description: "There was an error fetching your favorite notes.",
+          description: errorMessage, // Use specific error message from backend if available
           status: "error",
           position: "top",
           duration: 5000,
@@ -218,19 +242,20 @@ const Favorites = () => {
   const handleToggleSingleFavorite = async (id, currentFavoriteStatus) => {
     onSingleUnfavoriteClose(); // Close dialog if opened for unfavorite
     setIsTogglingFavorite(true);
+
     try {
-      // API endpoint to toggle favorite status for a single note
-      await axios.post(
+      // API endpoint to set isFavorite to FALSE for this note
+      await axios.put(
         `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
         {
-          isFavorite: !currentFavoriteStatus, // Send the new status
+          isFavorite: false, // Explicitly set to false to unfavorite
         }
       );
+
       toast({
-        title: currentFavoriteStatus ? "Note Unfavorited" : "Note Favorited",
-        description: currentFavoriteStatus
-          ? "The note has been unfavorited."
-          : "The note has been favorited.",
+        title: "Note Unfavorited", // Always this title
+        description:
+          "The note has been successfully removed from your favorites.", // Always this description
         status: "success",
         position: "top",
         duration: 4000,
@@ -238,19 +263,20 @@ const Favorites = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
+
       setSelectedNotes((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        next.delete(id); // Deselect the note if it was selected
         return next;
       });
-      fetchFavoriteNotes(); // Refetch to update the list
+      fetchFavoriteNotes(); // Refetch to update the list (removing the unfavorited note)
     } catch (err) {
-      console.error("Error toggling favorite status for single note:", err);
+      console.error("Error unfavoriting single note:", err); // Updated console error message
       const errorMessage =
         err.response?.data?.message ||
-        "There was an error toggling favorite status for this note.";
+        "There was an error removing this note from favorites."; // Updated error message
       toast({
-        title: "Action Failed",
+        title: "Unfavorite Failed", // Updated toast title for error
         description: errorMessage,
         status: "error",
         position: "top",
@@ -262,7 +288,7 @@ const Favorites = () => {
     } finally {
       setIsTogglingFavorite(false);
       setNoteToToggleFavoriteId(null);
-      setIsFavoriteStatusToToggle(null);
+      setIsFavoriteStatusToToggle(null); // This might not be strictly needed now, but harmless
     }
   };
 
