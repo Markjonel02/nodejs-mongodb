@@ -10,6 +10,7 @@ const ArchiveComponent = lazy(() => import("../routes/Archivednotes"));
 const TestFolder = lazy(() => import("../routes/TestFolder"));
 const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
 const Favorites = lazy(() => import("../routes/Favorites"));
+const Calendarevent = lazy(() => import("../routes/Calendar"));
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
@@ -35,9 +36,9 @@ const Dashboard = () => {
             {/* Archive Route: Displays ArchiveComponent */}
             <Route path="/archive" element={<ArchiveComponent />} />
             {/* Add other routes as needed */}
-            <Route path="/calendar" element={<div>Calendar View</div>} />
+            <Route path="/calendar" element={<Calendarevent />} />
             <Route path="/trash" element={<TrashRoutes />} />
-            <Route path="/favorites" element={<Favorites />} />
+            <Route path="/favorites" element={<Favorites />} />\
           </Routes>
         </Suspense>
       </Box>
