@@ -378,7 +378,6 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
 
         // Create a new document in T
         if (archivedNote) {
-          rash;
           await Trash.create({
             ...archivedNote.toObject(),
             deletedAt: new Date(),
@@ -627,12 +626,10 @@ exports.unfavoriteMultiple = async (req, res) => {
       { $set: { isFavorite: false } }
     );
 
-    res
-      .status(200)
-      .json({
-        message: "Notes unfavorited.",
-        modifiedCount: result.modifiedCount,
-      });
+    res.status(200).json({
+      message: "Notes unfavorited.",
+      modifiedCount: result.modifiedCount,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error.", error });
