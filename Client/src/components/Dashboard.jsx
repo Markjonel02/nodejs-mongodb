@@ -9,46 +9,36 @@ const ArchiveComponent = lazy(() => import("../routes/Archivednotes"));
 const TestFolder = lazy(() => import("../routes/TestFolder"));
 const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
 const Favorites = lazy(() => import("../routes/Favorites"));
-const NotfoundPage = lazy(() => import("../routes/Nopage")); // Ensure the file exists
+const NotFoundPage = lazy(() => import("../routes/Nopage"));
 
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
   return (
-    <Routes>
-      {/* 404 Route */}
-      <Route path="*" element={<NotfoundPage />} />
+    <Box display="flex" width="100%" minH="100vh" bg="gray.50">
+      <TestNav onNoteAdded={() => setShouldRefetchNotes((prev) => !prev)} />
 
-      {/* All other routes with side panel */}
-      <Route
-        path="/"
-        element={
-          <Box display="flex" width="100%" minH="100vh" bg="gray.50">
-            <TestNav
-              onNoteAdded={() => setShouldRefetchNotes((prev) => !prev)}
+      {/* Main Content Area */}
+      <Box width="100%" flex="1">
+        <Suspense fallback={<Skeletons />}>
+          <Routes>
+            {/* Index route for main folder */}
+            <Route
+              index
+              element={<TestFolder shouldRefetchNotes={shouldRefetchNotes} />}
             />
 
-            {/* Main Content Area */}
-            <Box width="100%" flex="1">
-              <Suspense fallback={<Skeletons />}>
-                <Routes>
-                  <Route
-                    index
-                    path="/"
-                    element={
-                      <TestFolder shouldRefetchNotes={shouldRefetchNotes} />
-                    }
-                  />
-                  <Route path="/archive" element={<ArchiveComponent />} />
-                  <Route path="/trash" element={<TrashRoutes />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                </Routes>
-              </Suspense>
-            </Box>
-          </Box>
-        }
-      ></Route>
-    </Routes>
+            {/* Other routes */}
+            <Route path="/archive" element={<ArchiveComponent />} />
+            <Route path="/trash" element={<TrashRoutes />} />
+            <Route path="/favorites" element={<Favorites />} />
+
+            {/* 404 fallback */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </Box>
+    </Box>
   );
 };
 

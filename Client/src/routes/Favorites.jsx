@@ -491,7 +491,7 @@ const Favorites = () => {
           // Apply background/shadow only if there are NO filtered notes at all
           // or if the initial fetch resulted in no notes.
           {...(filteredAndSortedNotes.length === 0 && !loading
-            ? { p: 10, bg: "white", borderRadius: "lg", shadow: "md" }
+            ? { p: 10 }
             : {})}
         >
           <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
