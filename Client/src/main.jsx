@@ -5,8 +5,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import customTheme from "./Theme.jsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
-import "swiper/css";
-import "swiper/css/navigation";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

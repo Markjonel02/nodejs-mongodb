@@ -12,7 +12,6 @@ function App() {
         </header>
         <MainContainer>
           <Dashboard />
-
         </MainContainer>
       </Box>
     </>
