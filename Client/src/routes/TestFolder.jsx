@@ -31,15 +31,13 @@ import {
   HStack,
   Circle,
   Flex,
-  Spacer,
-  InputGroup,
-  InputLeftElement,
-  Skeleton, // Import Skeleton
-  SkeletonText, // Import SkeletonText
+  Skeleton,
+  SkeletonText,
+  useBreakpointValue, // Import useBreakpointValue
 } from "@chakra-ui/react";
 
-import { FiMoreHorizontal, FiSearch } from "react-icons/fi";
-import { useState, useEffect, useRef, memo, useMemo } from "react";
+import { FiMoreHorizontal } from "react-icons/fi";
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
 import axios from "axios";
 import book from "../assets/img/wmremove-transformed.png";
@@ -47,22 +45,20 @@ import { IoTrashBinOutline } from "react-icons/io5";
 import { CiFileOff, CiEdit } from "react-icons/ci";
 import { MdOutlineFavoriteBorder, MdOutlineFavorite } from "react-icons/md";
 import { colors } from "../utils/colors";
-import { ChevronDownIcon } from "@chakra-ui/icons";
 
-// Helper function to get initial state from localStorage
-const getInitialSortBy = () => {
-  const storedSortBy = localStorage.getItem("noteSortBy");
-  return storedSortBy ? storedSortBy : "dateDesc"; // Default to "dateDesc" if no value is stored
-};
+import { usePagination } from "../customhooks/usePagination";
+import { PaginationControls } from "../components/PaginationControls";
+import { NoteNavigation } from "../components/NoteNavigation";
 
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState(getInitialSortBy);
-  const [searchTerm, setSearchTerm] = useState(""); // State for immediate input value
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(""); // Debounced state for filtering
+
+  const [currentSortBy, setCurrentSortBy] = useState("dateDesc");
+  const [currentSearchTerm, setCurrentSearchTerm] = useState("");
+
   const toast = useToast();
 
   const {
@@ -126,22 +122,13 @@ const Folders = ({ shouldRefetchNotes }) => {
     fetchNotes();
   }, [shouldRefetchNotes]);
 
-  useEffect(() => {
-    localStorage.setItem("noteSortBy", sortBy);
-  }, [sortBy]);
+  const handleSearchChange = useCallback((term) => {
+    setCurrentSearchTerm(term);
+  }, []);
 
-  // Debounce effect for search term
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500); // 500ms delay
-
-    // Cleanup function: This runs if searchTerm changes before the timeout
-    // or if the component unmounts.
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]); // Re-run effect only when searchTerm changes
+  const handleSortChange = useCallback((sortOrder) => {
+    setCurrentSortBy(sortOrder);
+  }, []);
 
   const handleDeleteNote = (noteId) => {
     setNoteToDelete(noteId);
@@ -344,13 +331,11 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
   };
 
-  // Filter notes based on debouncedSearchTerm, then sort them
   const filteredAndSortedNotes = useMemo(() => {
     let currentNotes = [...notes];
 
-    // 1. Filter using debouncedSearchTerm
-    if (debouncedSearchTerm) {
-      const lowercasedSearchTerm = debouncedSearchTerm.toLowerCase();
+    if (currentSearchTerm) {
+      const lowercasedSearchTerm = currentSearchTerm.toLowerCase();
       currentNotes = currentNotes.filter(
         (note) =>
           note.title.toLowerCase().includes(lowercasedSearchTerm) ||
@@ -358,20 +343,32 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    // 2. Sort
-    if (sortBy === "az") {
+    if (currentSortBy === "az") {
       currentNotes.sort((a, b) => a.title.localeCompare(b.title));
-    } else if (sortBy === "dateDesc") {
+    } else if (currentSortBy === "dateDesc") {
       currentNotes.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
-    } else if (sortBy === "dateAsc") {
+    } else if (currentSortBy === "dateAsc") {
       currentNotes.sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
     }
     return currentNotes;
-  }, [notes, sortBy, debouncedSearchTerm]);
+  }, [notes, currentSortBy, currentSearchTerm]);
+
+  // Dynamically set notesPerPage based on breakpoint
+  const notesPerPage = useBreakpointValue({
+    base: 4, // 4 notes on extra small screens (e.g., phones)
+    sm: 4, // 4 notes on small screens (e.g., larger phones in portrait/landscape)
+    md: 4, // 8 notes on medium screens (e.g., tablets)
+    lg: 8, // 8 notes on large screens (e.g., desktops)
+  });
+
+  const { currentPage, currentItems, totalPages, paginate } = usePagination(
+    filteredAndSortedNotes,
+    notesPerPage // Use the dynamic value here
+  );
 
   const renderNoteContent = () => {
     if (error) {
@@ -382,9 +379,8 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    // Determine the search result count message
     let searchResultCountMessage = null;
-    if (debouncedSearchTerm && filteredAndSortedNotes.length > 0) {
+    if (currentSearchTerm && filteredAndSortedNotes.length > 0) {
       const resultCount = filteredAndSortedNotes.length;
       searchResultCountMessage = (
         <Text textAlign="center" mt={4} mb={6} fontSize="md" color="gray.600">
@@ -393,15 +389,12 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    // If no notes are found (either initially or after filtering)
     if (filteredAndSortedNotes.length === 0 && !loading) {
-      // Added !loading here
       return (
         <>
-          {searchResultCountMessage}{" "}
-          {/* Show count if applicable (e.g., "0 results found") */}
+          {searchResultCountMessage}
           <Text textAlign="center" mt={20} fontWeight={500} fontSize={20}>
-            {debouncedSearchTerm
+            {currentSearchTerm
               ? "No matching notes found."
               : "No notes found. Start by adding a new one!"}
           </Text>
@@ -424,48 +417,38 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    // Skeleton Loader when loading is true
     if (loading) {
       return (
         <SimpleGrid
-          columns={{ base: 1, sm: 2, md: 2, lg: 3 }}
+          columns={{ base: 1, sm: 2, md: 2, lg: 4 }} // Columns for skeleton loading
           spacing={4}
           mt={4}
           gap={4}
         >
-          {[...Array(8)].map(
+          {[...Array(notesPerPage)].map(
             (
               _,
-              index // Render 8 skeleton cards as an example
+              index // Use notesPerPage for skeleton count
             ) => (
               <Box
                 key={index}
                 p={6}
-                bg="gray.100" // A light background for the skeleton
+                bg="gray.100"
                 borderRadius="lg"
                 position="relative"
                 width="100%"
                 boxShadow="md"
                 textAlign="left"
               >
-                <Skeleton height="30px" width="30px" mb={4} />{" "}
-                {/* Icon skeleton */}
-                <SkeletonText
-                  mt="4"
-                  noOfLines={1}
-                  spacing="4"
-                  height="20px"
-                />{" "}
-                {/* Title skeleton */}
+                <Skeleton height="30px" width="30px" mb={4} />
+                <SkeletonText mt="4" noOfLines={1} spacing="4" height="20px" />
                 <SkeletonText
                   mt="4"
                   noOfLines={3}
                   spacing="4"
                   skeletonHeight="10px"
-                />{" "}
-                {/* Text content skeleton */}
-                <Skeleton mt="4" height="15px" width="50%" />{" "}
-                {/* Date skeleton */}
+                />
+                <Skeleton mt="4" height="15px" width="50%" />
               </Box>
             )
           )}
@@ -473,124 +456,105 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    // If there are notes to display, render the count message (if any)
-    // and then the SimpleGrid of notes.
     return (
       <>
-        {searchResultCountMessage} {/* Display the count message */}
-        <Box position="relative" width="100%" mb={8}>
-          <Box
-            width={{ base: "100%" }}
-            pr={{ base: 0, md: 4 }}
-            mb={6}
-            display="flex"
-            flexDirection={{ base: "column", md: "column", lg: "row" }}
-            alignItems={{ base: "flex-start", md: "center" }}
-            gap={4}
-          >
-            <Box flex="1" width="100%">
-              <SimpleGrid
-                columns={{ base: 1, sm: 2, md: 2, lg: 4 }}
-                spacing={4}
-                mt={4}
-                gap={4}
+        {searchResultCountMessage}
+        <SimpleGrid
+          columns={{ base: 1, sm: 2, md: 2, lg: 4 }} // Adjust these columns based on desired visual layout
+          spacing={4}
+          mt={4}
+          gap={4}
+        >
+          {currentItems.map((note, index) => (
+            <Box
+              key={note._id || index}
+              p={6}
+              bg={note.color}
+              borderRadius="lg"
+              position="relative"
+              width="100%"
+              boxShadow="md"
+              textAlign="left"
+            >
+              <FaNoteSticky color="#53b1ffff" mb="4" size={30} />
+              <Text fontWeight="bold" fontSize="lg" mt={5}>
+                {note.title.length > 15
+                  ? note.title.substring(0, 15) + "..."
+                  : note.title}
+              </Text>
+              <Text fontSize="0.9em" mt={1} mb={4}>
+                {note.notes.length > 20
+                  ? note.notes.substring(0, 20) + "..."
+                  : note.notes}
+              </Text>
+
+              <Text
+                fontSize="12px"
+                position="absolute"
+                bottom={3}
+                left={6}
+                mt={2}
+                color="gray.600"
               >
-                {filteredAndSortedNotes.map((note, index) => (
-                  <Box
-                    key={note._id || index}
-                    p={6}
-                    bg={note.color}
-                    borderRadius="lg"
-                    position="relative"
-                    width="100%"
-                    boxShadow="md"
-                    textAlign="left"
+                Created: {new Date(note.createdAt).toLocaleDateString()}
+              </Text>
+
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  size="sm"
+                  position="absolute"
+                  top={3}
+                  right={3}
+                  aria-label="Note options"
+                  variant="ghost"
+                  _hover={{ bg: "transparent" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <FiMoreHorizontal size={20} />
+                </MenuButton>
+                <MenuList>
+                  <MenuItem onClick={() => handleUpdateNote(note)}>
+                    <Icon as={CiEdit} mr={2} /> Edit
+                  </MenuItem>
+                  <MenuItem onClick={() => handleDeleteNote(note._id)}>
+                    <Icon as={IoTrashBinOutline} mr={2} /> Delete
+                  </MenuItem>
+                  <MenuItem onClick={() => handleArchiveNoteClick(note._id)}>
+                    <Icon as={CiFileOff} mr={2} /> Archive
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() =>
+                      handleToggleFavorite(note._id, note.isFavorite)
+                    }
                   >
-                    <FaNoteSticky color="#53b1ffff" mb="4" size={30} />
-                    <Text fontWeight="bold" fontSize="lg" mt={5}>
-                      {note.title.length > 15
-                        ? note.title.substring(0, 15) + "..."
-                        : note.title}
-                    </Text>
-                    <Text fontSize="0.9em" mt={1} mb={4}>
-                      {note.notes.length > 100
-                        ? note.notes.substring(0, 100) + "..."
-                        : note.notes}
-                    </Text>
-
-                    {/* Fixed Date at Bottom Left */}
-                    <Text
-                      fontSize="12px"
-                      position="absolute"
-                      bottom={3}
-                      left={6}
-                      mt={2}
-                      color="gray.600"
-                    >
-                      Created: {new Date(note.createdAt).toLocaleDateString()}
-                    </Text>
-
-                    <Menu>
-                      <MenuButton
-                        as={Button}
-                        size="sm"
-                        position="absolute"
-                        top={3}
-                        right={3}
-                        aria-label="Note options"
-                        variant="ghost"
-                        _hover={{ bg: "transparent" }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <FiMoreHorizontal size={20} />
-                      </MenuButton>
-                      <MenuList>
-                        <MenuItem onClick={() => handleUpdateNote(note)}>
-                          <Icon as={CiEdit} mr={2} /> Edit
-                        </MenuItem>
-                        <MenuItem onClick={() => handleDeleteNote(note._id)}>
-                          <Icon as={IoTrashBinOutline} mr={2} /> Delete
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() => handleArchiveNoteClick(note._id)}
-                        >
-                          <Icon as={CiFileOff} mr={2} /> Archive
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() =>
-                            handleToggleFavorite(note._id, note.isFavorite)
-                          }
-                        >
-                          <Icon
-                            as={
-                              note.isFavorite
-                                ? MdOutlineFavorite
-                                : MdOutlineFavoriteBorder
-                            }
-                            color={note.isFavorite ? "red.500" : "inherit"}
-                            mr={2}
-                          />{" "}
-                          {note.isFavorite ? "Unfavorite" : "Favorite"}
-                        </MenuItem>
-                      </MenuList>
-                    </Menu>
-                  </Box>
-                ))}
-              </SimpleGrid>
+                    <Icon
+                      as={
+                        note.isFavorite
+                          ? MdOutlineFavorite
+                          : MdOutlineFavoriteBorder
+                      }
+                      color={note.isFavorite ? "red.500" : "inherit"}
+                      mr={2}
+                    />{" "}
+                    {note.isFavorite ? "Unfavorite" : "Favorite"}
+                  </MenuItem>
+                </MenuList>
+              </Menu>
             </Box>
-          </Box>
-        </Box>
+          ))}
+        </SimpleGrid>
       </>
     );
   };
 
   return (
-    <Box p={6}>
+    <Box p={6} pb="80px">
+      {" "}
+      {/* Add padding-bottom to main content */}
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
       </Heading>
-
-      {/* Main button group for note tabs, centered */}
       <ButtonGroup mb={2} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
@@ -604,76 +568,14 @@ const Folders = ({ shouldRefetchNotes }) => {
           </Button>
         ))}
       </ButtonGroup>
-
-      {/* Flex container for the Search Bar (left) and Sorting Dropdown (right) */}
-      <Flex width="100%" mb={4} pr={4} pl={4} alignItems="center" mt={4}>
-        <InputGroup
-          width={{ base: "100%", sm: "200px", md: "250px", lg: "300px" }}
-          maxWidth={{ base: "100%", sm: "200px", md: "250px", lg: "300px" }}
-          transition="all 0.3s ease-in-out" // Slightly slower and smoother transition
-          _focusWithin={{
-            width: { base: "100%", sm: "250px", md: "350px", lg: "400px" },
-            maxWidth: { base: "100%", sm: "250px", md: "350px", lg: "400px" },
-
-            borderColor: "blue.400", // Blue border
-          }}
-          mr={4}
-          bg="white"
-          borderRadius="md"
-          boxShadow="sm"
-          _hover={{
-            boxShadow: "md",
-          }}
-        >
-          <InputLeftElement pointerEvents="none" height="100%">
-            <Icon as={FiSearch} color="gray.500" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search notes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            size="md"
-            pl="3rem"
-            border="1px solid"
-            borderColor="gray.200"
-            _placeholder={{ color: "gray.400" }}
-            _focus={{
-              borderColor: "blue.400",
-              boxShadow: "none",
-            }}
-          />
-        </InputGroup>
-        <Spacer />
-        <Menu>
-          <MenuButton
-            as={Button}
-            rightIcon={<ChevronDownIcon />}
-            size="sm"
-            bg={"transparent"}
-          >
-            Sort By:{" "}
-            {sortBy === "az"
-              ? "A-Z"
-              : sortBy === "dateDesc"
-              ? "Date (Newest)"
-              : "Date (Oldest)"}
-          </MenuButton>
-          <MenuList>
-            <MenuItem onClick={() => setSortBy("az")}>A-Z</MenuItem>
-            <MenuItem onClick={() => setSortBy("dateDesc")}>
-              Date (Newest First)
-            </MenuItem>
-            <MenuItem onClick={() => setSortBy("dateAsc")}>
-              Date (Oldest First)
-            </MenuItem>
-          </MenuList>
-        </Menu>
-      </Flex>
-
-      {/* Render the notes content based on conditions */}
+      <NoteNavigation onSearch={handleSearchChange} onSort={handleSortChange} />
       {renderNoteContent()}
-
-      {/* Delete Confirmation AlertDialog */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        paginate={paginate}
+      />
+      {/* Delete Confirmation AlertDialog (unchanged) */}
       <AlertDialog
         isOpen={isDeleteOpen}
         leastDestructiveRef={cancelRef}
@@ -707,8 +609,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-
-      {/* Archive Confirmation AlertDialog */}
+      {/* Archive Confirmation AlertDialog (unchanged) */}
       <AlertDialog
         isOpen={isArchiveOpen}
         leastDestructiveRef={archiveCancelRef}
@@ -736,8 +637,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-
-      {/* Update Note Modal */}
+      {/* Update Note Modal (unchanged) */}
       <Modal isOpen={isUpdateOpen} onClose={onUpdateClose}>
         <ModalOverlay />
         <ModalContent>
@@ -760,7 +660,6 @@ const Folders = ({ shouldRefetchNotes }) => {
               />
             </FormControl>
 
-            {/* Color selection using Circles */}
             <FormControl id="noteColor" mb={4}>
               <FormLabel>Color</FormLabel>
               <HStack spacing={2} align="start" flexWrap="wrap">
