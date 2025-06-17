@@ -20,6 +20,7 @@ import {
   AlertDialogOverlay,
   useDisclosure,
   IconButton,
+  useBreakpointValue, // Import useBreakpointValue for responsive pagination
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
@@ -30,6 +31,14 @@ import {
   FaExclamationCircle,
   FaRedo, // Import FaRedo for the restore icon
 } from "react-icons/fa";
+
+// --- Import your custom hooks/components ---
+import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
+import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
+import { NoteNavigation } from "../components/NoteNavigation"; // Adjust this path if necessary
+
+// Import the placeholder image for no notes found
+import book from "../assets/img/wmremove-transformed.png"; // Adjust this path if necessary
 
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
@@ -86,12 +95,16 @@ const NoteCard = ({
 
       <CardHeader pt={12} pb={2}>
         <Heading size="md" mb={2} color="purple.800" noOfLines={2}>
-          {note.title}
+          {note.title.length > 15
+            ? note.title.substring(0, 15) + "..."
+            : note.title}
         </Heading>
       </CardHeader>
       <CardBody pt={2}>
         <Text fontSize="md" color="gray.700" noOfLines={5}>
-          {note.notes}
+          {note.notes.length > 20
+            ? note.notes.substring(0, 20) + "..."
+            : note.notes}
         </Text>
         <Flex justify="space-between" align="center" mt={3}>
           <Text fontSize="xs" color="gray.500">
@@ -119,6 +132,11 @@ const Trashnotes = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState(null);
   const [noteToRestoreId, setNoteToRestoreId] = useState(null);
+
+  // --- State for sorting and searching ---
+  const [currentSortBy, setCurrentSortBy] = useState("dateDesc"); // Default sort: newest deleted first
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(""); // Default empty search
+
   const toast = useToast();
   const cancelRef = useRef();
 
@@ -157,7 +175,7 @@ const Trashnotes = () => {
     setError(null);
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/trashview" // New API endpoint for trash
+        "http://localhost:5000/api/trashview" // API endpoint for trash
       );
       setTrashedNotes(data);
     } catch (err) {
@@ -181,6 +199,49 @@ const Trashnotes = () => {
     }
   };
 
+  // --- Search and Sort Logic (Memoized for performance) ---
+  const filteredAndSortedNotes = useMemo(() => {
+    let currentNotes = [...trashedNotes];
+
+    // Apply search filter
+    if (currentSearchTerm) {
+      const lowercasedSearchTerm = currentSearchTerm.toLowerCase();
+      currentNotes = currentNotes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+          note.notes.toLowerCase().includes(lowercasedSearchTerm)
+      );
+    }
+
+    // Apply sort order
+    if (currentSortBy === "az") {
+      currentNotes.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (currentSortBy === "dateDesc") {
+      currentNotes.sort(
+        (a, b) => new Date(b.deletedAt) - new Date(a.deletedAt)
+      );
+    } else if (currentSortBy === "dateAsc") {
+      currentNotes.sort(
+        (a, b) => new Date(a.deletedAt) - new Date(b.deletedAt)
+      );
+    }
+    return currentNotes;
+  }, [trashedNotes, currentSortBy, currentSearchTerm]);
+
+  // --- Responsive Notes Per Page for Pagination ---
+  const notesPerPage = useBreakpointValue({
+    base: 4, // 4 notes on extra small screens (e.g., phones)
+    sm: 4, // 4 notes on small screens
+    md: 8, // 8 notes on medium screens (e.g., tablets)
+    lg: 8, // 8 notes on large screens (e.g., desktops)
+  });
+
+  // --- Pagination Hook ---
+  const { currentPage, currentItems, totalPages, paginate } = usePagination(
+    filteredAndSortedNotes,
+    notesPerPage
+  );
+
   // --- Checkbox Handlers ---
   const handleCheckboxChange = useCallback((id) => {
     setSelectedNotes((prev) => {
@@ -192,11 +253,12 @@ const Trashnotes = () => {
 
   const handleSelectAllChange = useCallback(
     (e) => {
+      // Select only notes currently visible on the page
       setSelectedNotes(
-        e.target.checked ? new Set(trashedNotes.map((n) => n._id)) : new Set()
+        e.target.checked ? new Set(currentItems.map((n) => n._id)) : new Set()
       );
     },
-    [trashedNotes]
+    [currentItems] // Dependency: currentItems
   );
 
   // --- Delete Handlers ---
@@ -222,8 +284,8 @@ const Trashnotes = () => {
         variant: "solid",
       });
 
-      setSelectedNotes(new Set());
-      fetchTrashedNotes();
+      setSelectedNotes(new Set()); // Clear selection after deletion
+      fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error deleting selected notes:", err);
       toast({
@@ -247,7 +309,7 @@ const Trashnotes = () => {
     setIsDeleting(true);
     try {
       await axios.delete(
-        `http://localhost:5000/api/trashdelete/${id}` // New API endpoint for single permanent deletion
+        `http://localhost:5000/api/trashdelete/${id}` // API endpoint for single permanent deletion
       );
       toast({
         title: "Note Permanently Deleted",
@@ -261,10 +323,10 @@ const Trashnotes = () => {
       });
       setSelectedNotes((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        next.delete(id); // Remove the deleted note from selection
         return next;
       });
-      fetchTrashedNotes();
+      fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error deleting single note:", err);
       toast({
@@ -306,8 +368,8 @@ const Trashnotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
-      setSelectedNotes(new Set());
-      fetchTrashedNotes();
+      setSelectedNotes(new Set()); // Clear selection after restoration
+      fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error restoring selected notes:", err);
       const errorMessage =
@@ -327,6 +389,7 @@ const Trashnotes = () => {
       setIsRestoring(false);
     }
   };
+
   const handleRestoreSingleNote = async (id) => {
     onSingleRestoreClose();
     setIsRestoring(true);
@@ -348,10 +411,10 @@ const Trashnotes = () => {
       });
       setSelectedNotes((prev) => {
         const next = new Set(prev);
-        next.delete(id);
+        next.delete(id); // Remove the restored note from selection
         return next;
       });
-      fetchTrashedNotes();
+      fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error restoring single note:", err);
       const errorMessage =
@@ -390,10 +453,27 @@ const Trashnotes = () => {
     [onSingleRestoreOpen]
   );
 
-  // --- Memoized Render ---
+  // --- Handlers for NoteNavigation (Search & Sort) ---
+  const handleSearchChange = useCallback(
+    (term) => {
+      setCurrentSearchTerm(term);
+      paginate(1); // Reset to first page on search
+    },
+    [paginate]
+  );
+
+  const handleSortChange = useCallback(
+    (sortOrder) => {
+      setCurrentSortBy(sortOrder);
+      paginate(1); // Reset to first page on sort
+    },
+    [paginate]
+  );
+
+  // --- Memoized Render of Paginated Notes ---
   const renderedNotes = useMemo(
     () =>
-      trashedNotes.map((note) => (
+      currentItems.map((note) => (
         <NoteCard
           key={note._id}
           note={note}
@@ -406,7 +486,7 @@ const Trashnotes = () => {
         />
       )),
     [
-      trashedNotes,
+      currentItems,
       selectedNotes,
       handleCheckboxChange,
       openSingleDeleteDialog,
@@ -431,12 +511,21 @@ const Trashnotes = () => {
 
   // --- Main Component Render ---
   return (
-    <Box p={8} bg="gray.50" minH="100vh">
-      <Heading mb={8} textAlign="center" color="purple.700">
+    <Box p={8} bg="gray.50" minH="100vh" pb="80px">
+      <Heading mb={8} textAlign="center">
         Your Trash
       </Heading>
 
-      {trashedNotes.length > 0 && (
+      {/* Note Navigation (Search and Sort) */}
+      <NoteNavigation
+        onSearch={handleSearchChange}
+        onSort={handleSortChange}
+        currentSearchTerm={currentSearchTerm} // Pass current state
+        currentSortBy={currentSortBy} // Pass current state
+      />
+
+      {/* Action buttons (Select All, Restore Selected, Delete Selected) */}
+      {trashedNotes.length > 0 && ( // Only show controls if there are any notes in trash
         <Flex
           justify="space-between"
           align="center"
@@ -447,9 +536,14 @@ const Trashnotes = () => {
           shadow="sm"
         >
           <Checkbox
-            isChecked={selectedNotes.size === trashedNotes.length}
+            // Check if all notes on the current page are selected
+            isChecked={
+              selectedNotes.size === currentItems.length &&
+              currentItems.length > 0
+            }
+            // Check if some but not all notes on the current page are selected
             isIndeterminate={
-              selectedNotes.size > 0 && selectedNotes.size < trashedNotes.length
+              selectedNotes.size > 0 && selectedNotes.size < currentItems.length
             }
             onChange={handleSelectAllChange}
             colorScheme="purple"
@@ -462,7 +556,7 @@ const Trashnotes = () => {
               variant="ghost"
               leftIcon={<FaRedo />}
               onClick={onRestoreAllOpen}
-              isDisabled={!selectedNotes.size}
+              isDisabled={!selectedNotes.size} // Disable if no notes are selected
               isLoading={isRestoring}
             >
               Restore ({selectedNotes.size})
@@ -472,7 +566,7 @@ const Trashnotes = () => {
               colorScheme="red"
               leftIcon={<FaTrashAlt />}
               onClick={onDeleteAllOpen}
-              isDisabled={!selectedNotes.size}
+              isDisabled={!selectedNotes.size} // Disable if no notes are selected
               isLoading={isDeleting}
             >
               Delete Permanently ({selectedNotes.size})
@@ -481,22 +575,58 @@ const Trashnotes = () => {
         </Flex>
       )}
 
-      {trashedNotes.length > 0 ? (
+      {currentItems.length > 0 ? ( // Display notes if there are items on the current page after filtering/sorting
         <SimpleGrid columns={{ base: 1, sm: 2, md: 2, lg: 4 }} spacing={6}>
           {renderedNotes}
         </SimpleGrid>
       ) : (
+        // Conditional rendering for the "no notes" message and its background
         <VStack
           spacing={4}
-          p={10}
-          bg="white"
-          borderRadius="lg"
-          shadow="md"
           textAlign="center"
+          mt={8}
+          // Apply background/shadow only if there are NO filtered notes at all
+          // or if the initial fetch resulted in no notes.
+          {...(filteredAndSortedNotes.length === 0 && !loading
+            ? { p: 10 }
+            : {})}
         >
           <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
-            Your trash is empty.
+            {
+              (currentSearchTerm || currentSortBy !== "dateDesc") &&
+              filteredAndSortedNotes.length === 0 &&
+              !loading
+                ? "No matching notes found in trash." // When search/sort yields no results
+                : trashedNotes.length === 0 && !loading // When there are absolutely no notes in trash
+                ? "Your trash is empty."
+                : filteredAndSortedNotes.length === 0 && loading // Still loading, but no notes yet
+                ? "" // Don't show "no notes" if still loading
+                : currentItems.length === 0 && filteredAndSortedNotes.length > 0 // When notes exist but not on current page due to pagination
+                ? "No matching notes found on this page in trash."
+                : "" // Should not happen if currentItems.length > 0
+            }
           </Text>
+          {/* Display book image only when there are no notes at all or no matching results */}
+          {(trashedNotes.length === 0 ||
+            filteredAndSortedNotes.length === 0 ||
+            currentItems.length === 0) &&
+            !loading && (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                w="200px" // Adjust width as needed
+                h="auto"
+                mx="auto"
+                mt={4} // Add some margin top
+              >
+                <img
+                  src={book}
+                  alt="No notes"
+                  style={{ display: "block", margin: "auto", maxWidth: "100%" }}
+                />
+              </Box>
+            )}
           {error && (
             <Text fontSize="md" color="red.500">
               Error: {error}
@@ -505,7 +635,17 @@ const Trashnotes = () => {
         </VStack>
       )}
 
-      {/* --- AlertDialogs for Confirmations --- */}
+      {/* Pagination Controls */}
+      {/* Only show pagination if there are filtered and sorted notes to paginate */}
+      {filteredAndSortedNotes.length > 0 && !loading && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          paginate={paginate}
+        />
+      )}
+
+      {/* --- AlertDialogs for Confirmations (unchanged) --- */}
 
       {/* AlertDialog for Delete Selected Notes (Permanent) */}
       <AlertDialog

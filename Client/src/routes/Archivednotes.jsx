@@ -20,6 +20,7 @@ import {
   AlertDialogOverlay,
   useDisclosure,
   IconButton,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
@@ -28,8 +29,16 @@ import {
   FaHeart,
   FaCheckCircle,
   FaExclamationCircle,
-  FaRedo, // Import FaRedo for the restore icon
+  FaRedo,
 } from "react-icons/fa";
+
+// Import pagination and navigation components/hooks
+import { usePagination } from "../customhooks/usePagination";
+import { PaginationControls } from "../components/PaginationControls";
+import { NoteNavigation } from "../components/NoteNavigation";
+
+// Import the book image
+import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
 
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
@@ -86,12 +95,16 @@ const NoteCard = ({
 
       <CardHeader pt={12} pb={2}>
         <Heading size="md" mb={2} color="purple.800" noOfLines={2}>
-          {note.title}
+          {note.title.length > 15
+            ? note.title.substring(0, 15) + "..."
+            : note.title}
         </Heading>
       </CardHeader>
       <CardBody pt={2}>
         <Text fontSize="md" color="gray.700" noOfLines={5}>
-          {note.notes}
+          {note.notes.length > 20
+            ? note.notes.substring(0, 20) + "..."
+            : note.notes}
         </Text>
         <Flex justify="space-between" align="center" mt={3}>
           <Text fontSize="xs" color="gray.500">
@@ -118,6 +131,11 @@ const Archivednotes = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState(null);
   const [noteToRestoreId, setNoteToRestoreId] = useState(null);
+
+  // State for sorting and searching
+  const [currentSortBy, setCurrentSortBy] = useState("dateDesc"); // Default sort
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(""); // Default empty search
+
   const toast = useToast();
   const cancelRef = useRef();
 
@@ -180,6 +198,49 @@ const Archivednotes = () => {
     }
   };
 
+  // --- Search and Sort Logic (Memoized) ---
+  const filteredAndSortedNotes = useMemo(() => {
+    let currentNotes = [...archivedNotes];
+
+    // Apply search filter
+    if (currentSearchTerm) {
+      const lowercasedSearchTerm = currentSearchTerm.toLowerCase();
+      currentNotes = currentNotes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+          note.notes.toLowerCase().includes(lowercasedSearchTerm)
+      );
+    }
+
+    // Apply sort order
+    if (currentSortBy === "az") {
+      currentNotes.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (currentSortBy === "dateDesc") {
+      currentNotes.sort(
+        (a, b) => new Date(b.ArchivedAt) - new Date(a.ArchivedAt)
+      );
+    } else if (currentSortBy === "dateAsc") {
+      currentNotes.sort(
+        (a, b) => new Date(a.ArchivedAt) - new Date(b.ArchivedAt)
+      );
+    }
+    return currentNotes;
+  }, [archivedNotes, currentSortBy, currentSearchTerm]);
+
+  // --- Dynamic notesPerPage for Pagination ---
+  const notesPerPage = useBreakpointValue({
+    base: 4, // 4 notes on extra small screens (e.g., phones)
+    sm: 4, // 4 notes on small screens
+    md: 8, // 8 notes on medium screens (e.g., tablets)
+    lg: 8, // 8 notes on large screens (e.g., desktops)
+  });
+
+  // --- Pagination Hook ---
+  const { currentPage, currentItems, totalPages, paginate } = usePagination(
+    filteredAndSortedNotes,
+    notesPerPage
+  );
+
   // --- Checkbox Handlers ---
   const handleCheckboxChange = useCallback((id) => {
     setSelectedNotes((prev) => {
@@ -192,10 +253,10 @@ const Archivednotes = () => {
   const handleSelectAllChange = useCallback(
     (e) => {
       setSelectedNotes(
-        e.target.checked ? new Set(archivedNotes.map((n) => n._id)) : new Set()
+        e.target.checked ? new Set(currentItems.map((n) => n._id)) : new Set()
       );
     },
-    [archivedNotes]
+    [currentItems] // Important: Select only notes on the current page
   );
 
   // --- Delete Handlers ---
@@ -222,7 +283,6 @@ const Archivednotes = () => {
       setSelectedNotes(new Set()); // Clear selection after deletion
       fetchArchivedNotes(); // Refresh the list of notes
     } catch (err) {
-      // Catch the actual error object
       console.error("Error deleting selected notes:", err);
       toast({
         title: "Deletion Failed",
@@ -256,7 +316,6 @@ const Archivednotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
-      // Remove the deleted note from selectedNotes if it was selected
       setSelectedNotes((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -264,7 +323,6 @@ const Archivednotes = () => {
       });
       fetchArchivedNotes(); // Refresh the list of notes
     } catch (err) {
-      // Catch the actual error object
       console.error("Error deleting single note:", err);
       toast({
         title: "Deletion Failed",
@@ -289,17 +347,15 @@ const Archivednotes = () => {
 
     setIsRestoring(true);
     try {
-      // **IMPORTANT:** Use the correct API endpoint for multiple restore
-      // Based on our previous discussion, it should be /api/notes/restore-multiple
       const response = await axios.put(
-        "http://localhost:5000/api/arcnotes/restore-multiple", // Corrected endpoint
+        "http://localhost:5000/api/arcnotes/restore-multiple",
         { ids: Array.from(selectedNotes) }
       );
       toast({
         title: "Notes Restored",
         description:
           response.data.message ||
-          `${selectedNotes.size} note(s) have been restored.`, // Use backend message if available
+          `${selectedNotes.size} note(s) have been restored.`,
         status: "success",
         position: "top",
         duration: 4000,
@@ -310,7 +366,6 @@ const Archivednotes = () => {
       setSelectedNotes(new Set()); // Clear selection after restoration
       fetchArchivedNotes(); // Refresh the list of notes
     } catch (err) {
-      // Catch the actual error object
       console.error("Error restoring selected notes:", err);
       const errorMessage =
         err.response?.data?.message ||
@@ -334,16 +389,13 @@ const Archivednotes = () => {
     onSingleRestoreClose(); // Close the dialog immediately
     setIsRestoring(true);
     try {
-      // **IMPORTANT:** Use the correct API endpoint for single restore
-      // Based on our previous discussion, it should be /api/notes/restore/:id
       const response = await axios.put(
-        // Use PUT for single resource update/restore
-        `http://localhost:5000/api/arcnotes/restore/${id}` // Corrected endpoint
+        `http://localhost:5000/api/arcnotes/restore/${id}`
       );
       toast({
         title: "Note Restored",
         description:
-          response.data.message || "The note has been successfully restored.", // Use backend message if available
+          response.data.message || "The note has been successfully restored.",
         status: "success",
         position: "top",
         duration: 4000,
@@ -351,7 +403,6 @@ const Archivednotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
-      // Remove the restored note from selectedNotes if it was selected
       setSelectedNotes((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -359,7 +410,6 @@ const Archivednotes = () => {
       });
       fetchArchivedNotes(); // Refresh the list of notes
     } catch (err) {
-      // Catch the actual error object
       console.error("Error restoring single note:", err);
       const errorMessage =
         err.response?.data?.message ||
@@ -397,10 +447,27 @@ const Archivednotes = () => {
     [onSingleRestoreOpen]
   );
 
-  // --- Memoized Render ---
+  // --- Handlers for NoteNavigation (Search & Sort) ---
+  const handleSearchChange = useCallback(
+    (term) => {
+      setCurrentSearchTerm(term);
+      paginate(1); // Reset to first page on search
+    },
+    [paginate]
+  );
+
+  const handleSortChange = useCallback(
+    (sortOrder) => {
+      setCurrentSortBy(sortOrder);
+      paginate(1); // Reset to first page on sort
+    },
+    [paginate]
+  );
+
+  // --- Memoized Render of Paginated Notes ---
   const renderedNotes = useMemo(
     () =>
-      archivedNotes.map((note) => (
+      currentItems.map((note) => (
         <NoteCard
           key={note._id}
           note={note}
@@ -413,7 +480,7 @@ const Archivednotes = () => {
         />
       )),
     [
-      archivedNotes,
+      currentItems,
       selectedNotes,
       handleCheckboxChange,
       openSingleDeleteDialog,
@@ -438,12 +505,14 @@ const Archivednotes = () => {
 
   // --- Main Component Render ---
   return (
-    <Box p={8} bg="gray.50" minH="100vh">
-      <Heading mb={8} textAlign="center" color="purple.700">
+    <Box p={8} bg="gray.50" minH="100vh" pb="80px">
+      <Heading mb={8} textAlign="center">
         Your Archived Notes
       </Heading>
 
-      {archivedNotes.length > 0 && (
+      <NoteNavigation onSearch={handleSearchChange} onSort={handleSortChange} />
+
+      {filteredAndSortedNotes.length > 0 && (
         <Flex
           justify="space-between"
           align="center"
@@ -454,16 +523,18 @@ const Archivednotes = () => {
           shadow="sm"
         >
           <Checkbox
-            isChecked={selectedNotes.size === archivedNotes.length}
+            isChecked={
+              selectedNotes.size === currentItems.length &&
+              currentItems.length > 0
+            }
             isIndeterminate={
-              selectedNotes.size > 0 &&
-              selectedNotes.size < archivedNotes.length
+              selectedNotes.size > 0 && selectedNotes.size < currentItems.length
             }
             onChange={handleSelectAllChange}
             colorScheme="purple"
             size="lg"
           >
-            Select All
+            Select All (Page)
           </Checkbox>
           <Flex gap={4}>
             <Button
@@ -476,7 +547,7 @@ const Archivednotes = () => {
               Restore ({selectedNotes.size})
             </Button>
             <Button
-              variant="ghost" // Use ghost for a less prominent delete button
+              variant="ghost"
               colorScheme="red"
               leftIcon={<FaTrashAlt />}
               onClick={onDeleteAllOpen}
@@ -489,33 +560,47 @@ const Archivednotes = () => {
         </Flex>
       )}
 
-      {archivedNotes.length > 0 ? (
+      {currentItems.length > 0 ? (
         <SimpleGrid columns={{ base: 1, sm: 2, md: 2, lg: 4 }} spacing={6}>
           {renderedNotes}
         </SimpleGrid>
       ) : (
-        <VStack
-          spacing={4}
-          p={10}
-          bg="white"
-          borderRadius="lg"
-          shadow="md"
-          textAlign="center"
-        >
+        <VStack spacing={4} p={10} bg="transparent" textAlign="center" mt={8}>
           <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
-            No archived notes to display.
+            {currentSearchTerm || filteredAndSortedNotes.length === 0
+              ? "No matching archived notes found."
+              : "No archived notes to display."}
           </Text>
-          {error && (
-            <Text fontSize="md" color="red.500">
-              Error: {error}
-            </Text>
-          )}
+          {/* Add the book image here */}
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            w="200px" // Adjust width as needed
+            h="auto"
+            mx="auto"
+            mt={4} // Add some margin top
+          >
+            <img
+              src={book}
+              alt="No notes"
+              style={{ display: "block", margin: "auto", maxWidth: "100%" }}
+            />
+          </Box>
         </VStack>
       )}
 
-      {/* --- AlertDialogs for Confirmations --- */}
+      {/* Pagination Controls */}
+      {filteredAndSortedNotes.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          paginate={paginate}
+        />
+      )}
 
-      {/* AlertDialog for Delete Selected Notes */}
+      {/* --- AlertDialogs for Confirmations (Unchanged) --- */}
+      {/* ... (AlertDialogs are unchanged and remain here) ... */}
       <AlertDialog
         isOpen={isDeleteAllOpen}
         leastDestructiveRef={cancelRef}
@@ -556,7 +641,7 @@ const Archivednotes = () => {
             <AlertDialogHeader>Delete Note</AlertDialogHeader>
             <AlertDialogBody>
               Are you sure you want to delete this note? This action cannot be
-              undone.
+              unDone.
             </AlertDialogBody>
             <AlertDialogFooter>
               <Button ref={cancelRef} onClick={onSingleDeleteClose}>

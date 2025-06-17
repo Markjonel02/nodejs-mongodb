@@ -19,8 +19,9 @@ import {
   Textarea,
   useDisclosure,
   useToast,
+  IconButton,
 } from "@chakra-ui/react";
-import { Swiper, SwiperSlide } from "swiper/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 
 import {
   format,
@@ -32,19 +33,21 @@ import {
   parseISO,
 } from "date-fns";
 
-SwiperCore.use([Navigation]);
-
 const API_BASE_URL = "http://localhost:5000/api/events"; // Your backend API URL
 
 const Calendar2025 = () => {
   const [events, setEvents] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [currentEvent, setCurrentEvent] = useState(null); // For editing
+  const [currentEvent, setCurrentEvent] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   const yearToShow = 2025;
   const monthsArray = Array.from({ length: 12 }, (_, i) => i); // 0 = Jan, 11 = Dec
+
+  // --- Manual Slider State ---
+  const [currentSlide, setCurrentSlide] = useState(0); // 0 for Jan-Apr, 1 for May-Aug, 2 for Sep-Dec
+  const totalSlides = Math.ceil(monthsArray.length / 4); // Total number of 4-month chunks (3 for 12 months)
 
   useEffect(() => {
     fetchEvents();
@@ -72,12 +75,12 @@ const Calendar2025 = () => {
 
   const handleDayClick = (date) => {
     setSelectedDate(date);
-    setCurrentEvent(null); // Clear any event being edited
+    setCurrentEvent(null);
     onOpen();
   };
 
   const handleEditEvent = (event) => {
-    setSelectedDate(parseISO(event.start)); // Set the date for the form
+    setSelectedDate(parseISO(event.start));
     setCurrentEvent({
       ...event,
       start: format(parseISO(event.start), "yyyy-MM-dd'T'HH:mm"),
@@ -100,7 +103,7 @@ const Calendar2025 = () => {
         duration: 3000,
         isClosable: true,
       });
-      fetchEvents(); // Refresh events
+      fetchEvents();
     } catch (error) {
       console.error("Error deleting event:", error);
       toast({
@@ -126,14 +129,12 @@ const Calendar2025 = () => {
     try {
       let response;
       if (currentEvent) {
-        // Update existing event
         response = await fetch(`${API_BASE_URL}/${currentEvent._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(eventData),
         });
       } else {
-        // Create new event
         response = await fetch(API_BASE_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -153,7 +154,7 @@ const Calendar2025 = () => {
         isClosable: true,
       });
       onClose();
-      fetchEvents(); // Refresh events
+      fetchEvents();
     } catch (error) {
       console.error("Error saving event:", error);
       toast({
@@ -171,32 +172,38 @@ const Calendar2025 = () => {
     const lastDay = endOfMonth(firstDay);
     const daysInMonth = eachDayOfInterval({ start: firstDay, end: lastDay });
 
-    // Pad the beginning with empty cells for days before the 1st
-    const startDayOfWeek = getDay(firstDay); // Sunday = 0, Saturday = 6
+    const startDayOfWeek = getDay(firstDay);
     const paddedDays = Array(startDayOfWeek).fill(null).concat(daysInMonth);
 
     return (
       <Box
         key={`${monthIndex}-${year}`}
-        p={2}
+        p={1}
         border="1px solid #ccc"
         borderRadius="md"
-        height="auto"
+        minHeight="300px"
+        flexShrink={0}
+        flexGrow={1}
       >
-        <Heading size="sm" mb={2} textAlign="center">
-          {format(firstDay, "MMMM yyyy")}
+        <Heading size="xs" mb={1} textAlign="center">
+          {format(firstDay, "MMMM")}
         </Heading>
-        <SimpleGrid columns={7} spacing={1}>
+        <SimpleGrid columns={7} spacing={0.5}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <Text key={day} fontWeight="bold" textAlign="center" fontSize="xs">
+            <Text
+              key={day}
+              fontWeight="bold"
+              textAlign="center"
+              fontSize="xx-small"
+            >
               {day}
             </Text>
           ))}
           {paddedDays.map((date, index) => {
             if (!date) {
               return (
-                <Box key={`empty-${monthIndex}-${index}`} height="80px"></Box>
-              ); // Smaller height for month view
+                <Box key={`empty-${monthIndex}-${index}`} height="50px"></Box>
+              );
             }
 
             const dateKey = format(date, "yyyy-MM-dd");
@@ -208,38 +215,34 @@ const Calendar2025 = () => {
               <Flex
                 key={dateKey}
                 direction="column"
-                height="80px" // Smaller height for month view
+                height="50px"
                 border="1px solid lightgray"
-                p={1}
-                overflowY="auto"
+                p={0.5}
+                overflowY="hidden"
                 onClick={() => handleDayClick(date)}
                 cursor="pointer"
                 _hover={{ bg: "gray.50" }}
               >
-                <Text fontWeight="bold" fontSize="sm">
+                <Text fontWeight="bold" fontSize="xx-small">
                   {format(date, "d")}
                 </Text>
-                {dailyEvents.slice(0, 2).map(
-                  (
-                    event // Show max 2 events
-                  ) => (
-                    <Text
-                      key={event._id}
-                      fontSize="xs"
-                      color="blue.600"
-                      noOfLines={1}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditEvent(event);
-                      }}
-                    >
-                      • {event.title}
-                    </Text>
-                  )
-                )}
-                {dailyEvents.length > 2 && (
-                  <Text fontSize="xs" color="gray.500">
-                    + {dailyEvents.length - 2} more
+                {dailyEvents.slice(0, 1).map((event) => (
+                  <Text
+                    key={event._id}
+                    fontSize="xx-small"
+                    color="blue.600"
+                    noOfLines={1}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditEvent(event);
+                    }}
+                  >
+                    • {event.title}
+                  </Text>
+                ))}
+                {dailyEvents.length > 1 && (
+                  <Text fontSize="xx-small" color="gray.500">
+                    +{dailyEvents.length - 1} more
                   </Text>
                 )}
               </Flex>
@@ -257,47 +260,78 @@ const Calendar2025 = () => {
     return acc;
   }, []);
 
-  const swiperParams = {
-    slidesPerView: 1, // Default for smaller screens
-    spaceBetween: 20, // Space between slides (groups of 4 months)
-    navigation: true,
-    breakpoints: {
-      // When window width is >= 768px
-      768: {
-        slidesPerView: 1, // Still 1 slide containing 4 months
-        spaceBetween: 30,
-      },
-    },
+  const currentMonthGroup = chunkedMonths[currentSlide];
+
+  const goToNextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  };
+
+  const goToPrevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
 
   return (
-    <Box p={{ base: 4, md: 8 }} maxWidth="1200px" mx="auto">
-      <Heading mb={8} textAlign="center" fontSize={{ base: "xl", md: "2xl" }}>
+    <Box p={{ base: 2, md: 4 }} maxWidth="1200px" mx="auto">
+      <Heading mb={4} textAlign="center" fontSize={{ base: "lg", md: "xl" }}>
         2025 Calendar Scheduler
       </Heading>
-      <Swiper {...swiperParams}>
-        {chunkedMonths.map((monthGroup, index) => (
-          <SwiperSlide key={index}>
-            <Flex
-              justifyContent="space-around"
-              flexWrap="wrap"
-              gap={4} // Gap between the month boxes within a slide
-            >
-              {monthGroup.map((monthIndex) => (
-                <Box
-                  key={monthIndex}
-                  width={{ base: "100%", sm: "48%", lg: "24%" }} // Responsive widths for months
-                  flexShrink={0} // Prevent shrinking
-                >
-                  {renderMonth(monthIndex, yearToShow)}
-                </Box>
-              ))}
-            </Flex>
-          </SwiperSlide>
-        ))}
-      </Swiper>
 
-      {/* Event Modal */}
+      <Flex alignItems="center" justifyContent="center" mb={4}>
+        <IconButton
+          icon={<ChevronLeftIcon w={6} h={6} />}
+          onClick={goToPrevSlide}
+          aria-label="Previous months"
+          mr={2}
+          isDisabled={currentSlide === 0}
+        />
+
+        <Box
+          width="100%"
+          overflow="hidden"
+          position="relative"
+        >
+          <Flex
+            justifyContent="space-around"
+            flexWrap="nowrap"
+            gap={2}
+            minHeight="350px"
+            maxHeight="350px"
+            transition="transform 0.3s ease-in-out"
+            transform={`translateX(-${currentSlide * 100}%)`}
+          >
+            {chunkedMonths.map((group, groupIndex) => (
+              <Flex
+                key={`group-${groupIndex}`}
+                width="100%"
+                justifyContent="space-around"
+                flexShrink={0}
+                gap={2}
+                px={{ base: 1, md: 2 }}
+              >
+                {group.map((monthIndex) => (
+                  <Box
+                    key={monthIndex}
+                    width={{ base: "100%", sm: "48%", lg: "24%" }}
+                    flexShrink={0}
+                    flexBasis={{ base: "100%", sm: "48%", lg: "24%" }}
+                  >
+                    {renderMonth(monthIndex, yearToShow)}
+                  </Box>
+                ))}
+              </Flex>
+            ))}
+          </Flex>
+        </Box>
+
+        <IconButton
+          icon={<ChevronRightIcon w={6} h={6} />}
+          onClick={goToNextSlide}
+          aria-label="Next months"
+          ml={2}
+          isDisabled={currentSlide === totalSlides - 1}
+        />
+      </Flex>
+
       <Modal isOpen={isOpen} onClose={onClose} size="md">
         <ModalOverlay />
         <ModalContent>

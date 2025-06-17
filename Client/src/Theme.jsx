@@ -18,11 +18,11 @@ const customTheme = extendTheme({
         width: "8px",
       },
       "::-webkit-scrollbar-thumb": {
-        backgroundColor: "#6a0dad", // Direct color value
+        backgroundColor: "blackAlpha.300 ", // Direct color value
         borderRadius: "5px",
       },
       "::-webkit-scrollbar-track": {
-        backgroundColor: "#4b0082",
+        backgroundColor: "black.200",
       },
     },
   },

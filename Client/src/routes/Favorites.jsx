@@ -20,6 +20,7 @@ import {
   AlertDialogOverlay,
   useDisclosure,
   IconButton,
+  useBreakpointValue, // Import useBreakpointValue for responsive pagination
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
@@ -29,6 +30,14 @@ import {
   FaExclamationCircle,
   FaRegHeart, // Import FaRegHeart for unfavorite icon
 } from "react-icons/fa";
+
+// --- Import your custom hooks/components ---
+import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
+import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
+import { NoteNavigation } from "../components/NoteNavigation"; // Adjust this path if necessary
+
+// Import the placeholder image for no notes found
+import book from "../assets/img/wmremove-transformed.png"; // Adjust this path if necessary
 
 // --- FavoriteNoteCard Component ---
 const FavoriteNoteCard = ({
@@ -60,10 +69,16 @@ const FavoriteNoteCard = ({
 
       <Flex position="absolute" top={3} right={3} zIndex={1} gap={2}>
         <IconButton
-          icon={note.isFavorite ? <FaHeart color="red.500" /> : <FaRegHeart />} // Filled heart if favorite, outline if not
+          icon={
+            note.isFavorite ? (
+              <FaHeart color="red.500" />
+            ) : (
+              <FaRegHeart color="red.500" />
+            )
+          } // Filled heart if favorite, outline if not
           aria-label="Toggle favorite"
           bg={"transparent"}
-          _hover={{ bg: "white", color: "purple.500" }}
+          _hover={{ bg: "white", color: "red" }}
           size="sm"
           borderRadius="full"
           onClick={() => onToggleFavorite(note._id, !note.isFavorite)} // Pass current favorite status
@@ -73,12 +88,18 @@ const FavoriteNoteCard = ({
 
       <CardHeader pt={12} pb={2}>
         <Heading size="md" mb={2} color="purple.800" noOfLines={2}>
-          {note.title}
+          {/* Apply truncation to title */}
+          {note.title.length > 15
+            ? note.title.substring(0, 15) + "..."
+            : note.title}
         </Heading>
       </CardHeader>
       <CardBody pt={2}>
         <Text fontSize="md" color="gray.700" noOfLines={5}>
-          {note.notes}
+          {/* Apply truncation to notes content */}
+          {note.notes.length > 20
+            ? note.notes.substring(0, 20) + "..."
+            : note.notes}
         </Text>
         <Flex justify="space-between" align="center" mt={3}>
           <Text fontSize="xs" color="gray.500">
@@ -100,6 +121,11 @@ const Favorites = () => {
   const [noteToToggleFavoriteId, setNoteToToggleFavoriteId] = useState(null);
   const [isFavoriteStatusToToggle, setIsFavoriteStatusToToggle] =
     useState(null);
+
+  // --- State for sorting and searching ---
+  const [currentSortBy, setCurrentSortBy] = useState("dateDesc"); // Default sort: newest created first
+  const [currentSearchTerm, setCurrentSearchTerm] = useState(""); // Default empty search
+
   const toast = useToast();
   const cancelRef = useRef();
 
@@ -123,12 +149,10 @@ const Favorites = () => {
   }, []);
 
   // --- Data Fetching ---
-
   const fetchFavoriteNotes = async () => {
     setLoading(true);
     setError(null);
     try {
-      // This URL must match your backend's route
       const { data } = await axios.get(
         "http://localhost:5000/api/getfavorites"
       );
@@ -136,19 +160,13 @@ const Favorites = () => {
     } catch (err) {
       console.error("Error fetching favorite notes:", err);
 
-      // Enhanced logging for debugging Axios errors
       if (err.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error("Server responded with error:", err.response.data);
         console.error("Status:", err.response.status);
         console.error("Headers:", err.response.headers);
       } else if (err.request) {
-        // The request was made but no response was received
-        // `error.request` is an instance of XMLHttpRequest in the browser and an http.ClientRequest in node.js
         console.error("No response received from server:", err.request);
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error("Error setting up request:", err.message);
       }
       console.error("Axios config:", err.config);
@@ -156,12 +174,12 @@ const Favorites = () => {
       const errorMessage =
         err.response?.data?.message ||
         "There was an error fetching your favorite notes.";
-      setError("Failed to load favorite notes."); // Keep the generic error for display
+      setError("Failed to load favorite notes.");
       if (!toast.isActive(fetchErrorToastId)) {
         toast({
           id: fetchErrorToastId,
           title: "Failed to load notes",
-          description: errorMessage, // Use specific error message from backend if available
+          description: errorMessage,
           status: "error",
           position: "top",
           duration: 5000,
@@ -175,6 +193,49 @@ const Favorites = () => {
     }
   };
 
+  // --- Search and Sort Logic (Memoized for performance) ---
+  const filteredAndSortedNotes = useMemo(() => {
+    let currentNotes = [...favoriteNotes];
+
+    // Apply search filter
+    if (currentSearchTerm) {
+      const lowercasedSearchTerm = currentSearchTerm.toLowerCase();
+      currentNotes = currentNotes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(lowercasedSearchTerm) ||
+          note.notes.toLowerCase().includes(lowercasedSearchTerm)
+      );
+    }
+
+    // Apply sort order
+    if (currentSortBy === "az") {
+      currentNotes.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (currentSortBy === "dateDesc") {
+      currentNotes.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    } else if (currentSortBy === "dateAsc") {
+      currentNotes.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+    }
+    return currentNotes;
+  }, [favoriteNotes, currentSortBy, currentSearchTerm]);
+
+  // --- Responsive Notes Per Page for Pagination ---
+  const notesPerPage = useBreakpointValue({
+    base: 4, // 4 notes on extra small screens (e.g., phones)
+    sm: 4, // 4 notes on small screens
+    md: 8, // 8 notes on medium screens (e.g., tablets)
+    lg: 8, // 8 notes on large screens (e.g., desktops)
+  });
+
+  // --- Pagination Hook ---
+  const { currentPage, currentItems, totalPages, paginate } = usePagination(
+    filteredAndSortedNotes,
+    notesPerPage
+  );
+
   // --- Checkbox Handlers ---
   const handleCheckboxChange = useCallback((id) => {
     setSelectedNotes((prev) => {
@@ -186,32 +247,30 @@ const Favorites = () => {
 
   const handleSelectAllChange = useCallback(
     (e) => {
+      // Select only notes currently visible on the page
       setSelectedNotes(
-        e.target.checked ? new Set(favoriteNotes.map((n) => n._id)) : new Set()
+        e.target.checked ? new Set(currentItems.map((n) => n._id)) : new Set()
       );
     },
-    [favoriteNotes]
+    [currentItems] // Dependency: currentItems
   );
 
   // --- Favorite Toggle Handlers ---
   const handleToggleFavoriteSelected = async () => {
-    onUnfavoriteAllClose(); // Close any related modals/drawers
+    onUnfavoriteAllClose();
     if (!selectedNotes.size) {
-      // No notes selected, do nothing
       return;
     }
 
-    setIsTogglingFavorite(true); // Indicate that an operation is in progress
+    setIsTogglingFavorite(true);
     try {
-      // Frontend sends 'ids' in the request body, which matches the modified backend
       await axios.put(
         "http://localhost:5000/api/favorite/multiple-unfavorite",
         {
-          ids: Array.from(selectedNotes), // Convert Set to Array
+          ids: Array.from(selectedNotes),
         }
       );
 
-      // Success Toast
       toast({
         title: "Notes Unfavorited",
         description: `${selectedNotes.size} note(s) have been unfavorited.`,
@@ -223,15 +282,14 @@ const Favorites = () => {
         variant: "solid",
       });
 
-      setSelectedNotes(new Set()); // Clear selected notes after successful unfavorite
-      fetchFavoriteNotes(); // Refetch to update the list, showing the changes
+      setSelectedNotes(new Set());
+      fetchFavoriteNotes();
     } catch (err) {
       console.error("Error unfavoriting selected notes:", err);
       const errorMessage =
-        err.response?.data?.message || // Get specific message from backend if available
+        err.response?.data?.message ||
         "There was an error unfavoriting the selected notes.";
 
-      // Error Toast
       toast({
         title: "Unfavorite Failed",
         description: errorMessage,
@@ -243,27 +301,26 @@ const Favorites = () => {
         variant: "subtle",
       });
     } finally {
-      setIsTogglingFavorite(false); // Reset loading state
+      setIsTogglingFavorite(false);
     }
   };
 
   const handleToggleSingleFavorite = async (id, currentFavoriteStatus) => {
-    onSingleUnfavoriteClose(); // Close dialog if opened for unfavorite
+    onSingleUnfavoriteClose();
     setIsTogglingFavorite(true);
 
     try {
-      // API endpoint to set isFavorite to FALSE for this note
       await axios.put(
         `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
         {
-          isFavorite: false, // Explicitly set to false to unfavorite
+          isFavorite: false,
         }
       );
 
       toast({
-        title: "Note Unfavorited", // Always this title
+        title: "Note Unfavorited",
         description:
-          "The note has been successfully removed from your favorites.", // Always this description
+          "The note has been successfully removed from your favorites.",
         status: "success",
         position: "top",
         duration: 4000,
@@ -274,17 +331,17 @@ const Favorites = () => {
 
       setSelectedNotes((prev) => {
         const next = new Set(prev);
-        next.delete(id); // Deselect the note if it was selected
+        next.delete(id);
         return next;
       });
-      fetchFavoriteNotes(); // Refetch to update the list (removing the unfavorited note)
+      fetchFavoriteNotes();
     } catch (err) {
-      console.error("Error unfavoriting single note:", err); // Updated console error message
+      console.error("Error unfavoriting single note:", err);
       const errorMessage =
         err.response?.data?.message ||
-        "There was an error removing this note from favorites."; // Updated error message
+        "There was an error removing this note from favorites.";
       toast({
-        title: "Unfavorite Failed", // Updated toast title for error
+        title: "Unfavorite Failed",
         description: errorMessage,
         status: "error",
         position: "top",
@@ -296,7 +353,7 @@ const Favorites = () => {
     } finally {
       setIsTogglingFavorite(false);
       setNoteToToggleFavoriteId(null);
-      setIsFavoriteStatusToToggle(null); // This might not be strictly needed now, but harmless
+      setIsFavoriteStatusToToggle(null);
     }
   };
 
@@ -310,10 +367,27 @@ const Favorites = () => {
     [onSingleUnfavoriteOpen]
   );
 
-  // --- Memoized Render ---
+  // --- Handlers for NoteNavigation (Search & Sort) ---
+  const handleSearchChange = useCallback(
+    (term) => {
+      setCurrentSearchTerm(term);
+      paginate(1); // Reset to first page on search
+    },
+    [paginate]
+  );
+
+  const handleSortChange = useCallback(
+    (sortOrder) => {
+      setCurrentSortBy(sortOrder);
+      paginate(1); // Reset to first page on sort
+    },
+    [paginate]
+  );
+
+  // --- Memoized Render of Paginated Notes ---
   const renderedNotes = useMemo(
     () =>
-      favoriteNotes.map((note) => (
+      currentItems.map((note) => (
         <FavoriteNoteCard
           key={note._id}
           note={note}
@@ -326,7 +400,7 @@ const Favorites = () => {
         />
       )),
     [
-      favoriteNotes,
+      currentItems,
       selectedNotes,
       handleCheckboxChange,
       openSingleUnfavoriteDialog,
@@ -348,12 +422,21 @@ const Favorites = () => {
 
   // --- Main Component Render ---
   return (
-    <Box p={8} bg="gray.50" minH="100vh">
-      <Heading mb={8} textAlign="center" color="purple.700">
+    <Box p={8} bg="gray.50" minH="100vh" pb="80px">
+      <Heading mb={8} textAlign="center">
         Your Favorites
       </Heading>
 
-      {favoriteNotes.length > 0 && (
+      {/* Note Navigation (Search and Sort) */}
+      <NoteNavigation
+        onSearch={handleSearchChange}
+        onSort={handleSortChange}
+        currentSearchTerm={currentSearchTerm}
+        currentSortBy={currentSortBy}
+      />
+
+      {/* Action buttons (Select All, Unfavorite Selected) */}
+      {favoriteNotes.length > 0 && ( // Only show controls if there are any notes in favorites
         <Flex
           justify="space-between"
           align="center"
@@ -364,23 +447,29 @@ const Favorites = () => {
           shadow="sm"
         >
           <Checkbox
-            isChecked={selectedNotes.size === favoriteNotes.length}
+            // Check if all notes on the current page are selected
+            isChecked={
+              selectedNotes.size === currentItems.length &&
+              currentItems.length > 0
+            }
+            // Check if some but not all notes on the current page are selected
             isIndeterminate={
-              selectedNotes.size > 0 &&
-              selectedNotes.size < favoriteNotes.length
+              selectedNotes.size > 0 && selectedNotes.size < currentItems.length
             }
             onChange={handleSelectAllChange}
             colorScheme="purple"
             size="lg"
           >
-            Select All
+            Select All (Page)
           </Checkbox>
           <Flex gap={4}>
             <Button
-              variant="red"
+              variant="solid" // Changed to solid for better visibility
+              color={"red.300"}
               leftIcon={<FaRegHeart />}
+              bg={"transparent"}
               onClick={onUnfavoriteAllOpen}
-              isDisabled={!selectedNotes.size}
+              isDisabled={!selectedNotes.size} // Disable if no notes are selected
               isLoading={isTogglingFavorite}
             >
               Unfavorite ({selectedNotes.size})
@@ -389,22 +478,58 @@ const Favorites = () => {
         </Flex>
       )}
 
-      {favoriteNotes.length > 0 ? (
+      {currentItems.length > 0 ? ( // Display notes if there are items on the current page after filtering/sorting
         <SimpleGrid columns={{ base: 1, sm: 2, md: 2, lg: 4 }} spacing={6}>
           {renderedNotes}
         </SimpleGrid>
       ) : (
+        // Conditional rendering for the "no notes" message and its background
         <VStack
           spacing={4}
-          p={10}
-          bg="white"
-          borderRadius="lg"
-          shadow="md"
           textAlign="center"
+          mt={8}
+          // Apply background/shadow only if there are NO filtered notes at all
+          // or if the initial fetch resulted in no notes.
+          {...(filteredAndSortedNotes.length === 0 && !loading
+            ? { p: 10, bg: "white", borderRadius: "lg", shadow: "md" }
+            : {})}
         >
           <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
-            You don't have any favorite notes yet.
+            {
+              (currentSearchTerm || currentSortBy !== "dateDesc") &&
+              filteredAndSortedNotes.length === 0 &&
+              !loading
+                ? "No matching notes found in your favorites." // When search/sort yields no results
+                : favoriteNotes.length === 0 && !loading // When there are absolutely no favorite notes
+                ? "You don't have any favorite notes yet."
+                : filteredAndSortedNotes.length > 0 &&
+                  currentItems.length === 0 &&
+                  !loading // When notes exist but not on current page due to pagination (unlikely with pagination)
+                ? "No favorite notes found on this page matching your criteria."
+                : "" // Should not happen if currentItems.length > 0
+            }
           </Text>
+          {/* Display book image only when there are no notes at all or no matching results */}
+          {(favoriteNotes.length === 0 ||
+            filteredAndSortedNotes.length === 0 ||
+            currentItems.length === 0) &&
+            !loading && (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                w="200px" // Adjust width as needed
+                h="auto"
+                mx="auto"
+                mt={4} // Add some margin top
+              >
+                <img
+                  src={book}
+                  alt="No notes"
+                  style={{ display: "block", margin: "auto", maxWidth: "100%" }}
+                />
+              </Box>
+            )}
           {error && (
             <Text fontSize="md" color="red.500">
               Error: {error}
@@ -413,7 +538,17 @@ const Favorites = () => {
         </VStack>
       )}
 
-      {/* --- AlertDialogs for Confirmations --- */}
+      {/* Pagination Controls */}
+      {/* Only show pagination if there are filtered and sorted notes to paginate */}
+      {filteredAndSortedNotes.length > 0 && !loading && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          paginate={paginate}
+        />
+      )}
+
+      {/* --- AlertDialogs for Confirmations (unchanged) --- */}
 
       {/* AlertDialog for Unfavorite Selected Notes */}
       <AlertDialog

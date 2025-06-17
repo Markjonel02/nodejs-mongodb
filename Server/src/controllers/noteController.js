@@ -378,7 +378,6 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
 
         // Create a new document in T
         if (archivedNote) {
-          rash;
           await Trash.create({
             ...archivedNote.toObject(),
             deletedAt: new Date(),
@@ -603,53 +602,36 @@ exports.unfavoriteSingle = async (req, res) => {
   }
 };
 
+// Correct controller (with IDs in req.body)
 exports.unfavoriteMultiple = async (req, res) => {
   try {
-    const { ids } = req.body; // Expecting 'ids' as per your frontend
-
-    // --- Debugging step: Log incoming data ---
-    console.log("Received multiple-unfavorite request.");
-    console.log("Request Body:", req.body);
-    console.log("IDs to unfavorite:", ids);
-    // --- End Debugging step ---
+    const { ids } = req.body;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      console.log("Validation Error: No IDs or invalid IDs array provided.");
+      return res.status(400).json({ message: "An array of IDs is required." });
+    }
+
+    // Validate IDs
+    const invalidIds = ids.filter((id) => !mongoose.isValidObjectId(id));
+
+    if (invalidIds.length > 0) {
       return res
         .status(400)
-        .json({ message: "An array of note IDs ('ids') is required." });
+        .json({ message: "Some IDs are invalid.", invalidIds });
     }
 
-    // Mongoose will automatically cast valid string IDs to ObjectIds
+    // Perform update
     const result = await Addnote.updateMany(
-      { _id: { $in: ids } }, // Match documents where _id is in the provided 'ids' array
-      { $set: { isFavorite: false } } // Set isFavorite to false
+      { _id: { $in: ids } },
+      { $set: { isFavorite: false } }
     );
 
-    console.log("Mongoose updateMany result:", result);
-
-    if (result.matchedCount === 0) {
-      console.log("No notes found for the provided IDs.");
-      // It's not necessarily a 404 if some IDs were valid but none matched due to prior unfavorite
-      // A 200 with 0 modifiedCount is often acceptable here, but 404 is also okay.
-      return res.status(200).json({
-        message:
-          "No notes found with the provided IDs to unfavorite, or they were already unfavorited.",
-        modifiedCount: 0,
-      });
-    }
-
     res.status(200).json({
-      message: `${result.modifiedCount} note(s) successfully unfavorited.`,
+      message: "Notes unfavorited.",
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
-    // Log the full error for server-side debugging
-    console.error("Critical Error in /multiple-unfavorite route:", error);
-    // Send a generic error message to the client for security
-    res.status(500).json({
-      message: "Internal server error occurred while unfavoriting notes.",
-      error: error.message,
-    });
+    console.error(error);
+    res.status(500).json({ message: "Server Error.", error });
   }
 };
