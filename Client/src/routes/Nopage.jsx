@@ -23,15 +23,8 @@ export default function NotFoundPage() {
       position="relative"
     >
       {/* 404 video with 80% width */}
-      <Box width="80%" mb="6">
-        <video
-          src={notFoundImage}
-          muted
-          loop
-          autoPlay
-          width="80%"
-          style={{ borderRadius: "20px" }}
-        />
+      <Box mb="6" display="flex" justifyContent="center" alignItems="center">
+        <video src={notFoundImage} muted loop autoPlay width="600" />
       </Box>
 
       {/* Animated Heading and Text */}
@@ -40,10 +33,10 @@ export default function NotFoundPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
       >
-        <Heading mb="4" color="#fff">
+        <Heading mb="4" color="black">
           Page Not Found
         </Heading>
-        <Text fontSize="lg" mb="6" color="#fff">
+        <Text fontSize="lg" mb="6" color="black">
           Sorry, we couldn’t find the page you’re looking for.
         </Text>
       </MotionBox>
