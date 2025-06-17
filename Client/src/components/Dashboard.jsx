@@ -1,4 +1,3 @@
-// src/Dashboard.jsx
 import { useState, Suspense, lazy } from "react";
 import { Box } from "@chakra-ui/react";
 import { Routes, Route } from "react-router-dom";
@@ -10,16 +9,14 @@ const ArchiveComponent = lazy(() => import("../routes/Archivednotes"));
 const TestFolder = lazy(() => import("../routes/TestFolder"));
 const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
 const Favorites = lazy(() => import("../routes/Favorites"));
-const Nopage = lazy(() => import("../routes/Nopage"));
-const NotfoundPage = lazy(() => import("../routes/Nopage"));
-// <- make sure you create src/routes/NotfoundPage.jsx with the 404 previously shown
+const NotfoundPage = lazy(() => import("../routes/Nopage")); // Ensure the file exists
 
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
   return (
     <Routes>
-      {/* If 404, show without side panel or wrapper box */}
+      {/* 404 Route */}
       <Route path="*" element={<NotfoundPage />} />
 
       {/* All other routes with side panel */}
@@ -43,7 +40,6 @@ const Dashboard = () => {
                     }
                   />
                   <Route path="/archive" element={<ArchiveComponent />} />
-                  <Route path="/calendar" element={<Nopage />} />
                   <Route path="/trash" element={<TrashRoutes />} />
                   <Route path="/favorites" element={<Favorites />} />
                 </Routes>

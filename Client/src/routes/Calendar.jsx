@@ -19,9 +19,9 @@ import {
   Textarea,
   useDisclosure,
   useToast,
-  IconButton, // Added for navigation buttons
+  IconButton,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons"; // Icons for navigation
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 
 import {
   format,
@@ -181,10 +181,9 @@ const Calendar2025 = () => {
         p={1}
         border="1px solid #ccc"
         borderRadius="md"
-        // Ensure consistent min height for each month box
-        minHeight="300px" // Adjust this value if needed for your content
+        minHeight="300px"
         flexShrink={0}
-        flexGrow={1} // Allow month boxes to grow if space permits
+        flexGrow={1}
       >
         <Heading size="xs" mb={1} textAlign="center">
           {format(firstDay, "MMMM")}
@@ -283,41 +282,38 @@ const Calendar2025 = () => {
           onClick={goToPrevSlide}
           aria-label="Previous months"
           mr={2}
-          isDisabled={currentSlide === 0} // Disable if on the first slide
+          isDisabled={currentSlide === 0}
         />
 
         <Box
           width="100%"
-          overflow="hidden" // Ensure content outside current view is hidden
-          position="relative" // For positioning child flex
+          overflow="hidden"
+          position="relative"
         >
           <Flex
             justifyContent="space-around"
-            flexWrap="nowrap" // Prevent wrapping to keep months in a single row
+            flexWrap="nowrap"
             gap={2}
-            // Fixed height for the container holding 4 months
-            minHeight="350px" // Adjust this to fit your smaller month views
+            minHeight="350px"
             maxHeight="350px"
-            transition="transform 0.3s ease-in-out" // Smooth transition for sliding effect
-            transform={`translateX(-${currentSlide * 100}%)`} // Manual slide transformation
+            transition="transform 0.3s ease-in-out"
+            transform={`translateX(-${currentSlide * 100}%)`}
           >
-            {/* Render ALL month groups, but only one is visible due to transform */}
             {chunkedMonths.map((group, groupIndex) => (
               <Flex
                 key={`group-${groupIndex}`}
-                width="100%" // Each group takes full width of the parent Box
+                width="100%"
                 justifyContent="space-around"
-                flexShrink={0} // Important: prevent shrinking when in a row
+                flexShrink={0}
                 gap={2}
-                px={{ base: 1, md: 2 }} // Small padding to make sure month boxes aren't flush
+                px={{ base: 1, md: 2 }}
               >
                 {group.map((monthIndex) => (
                   <Box
                     key={monthIndex}
-                    // Make each month take roughly 1/4 of the group width, accounting for gaps
                     width={{ base: "100%", sm: "48%", lg: "24%" }}
-                    flexShrink={0} // Essential for consistent width in Flex nowrap
-                    flexBasis={{ base: "100%", sm: "48%", lg: "24%" }} // Alternative for precise width
+                    flexShrink={0}
+                    flexBasis={{ base: "100%", sm: "48%", lg: "24%" }}
                   >
                     {renderMonth(monthIndex, yearToShow)}
                   </Box>
@@ -332,11 +328,10 @@ const Calendar2025 = () => {
           onClick={goToNextSlide}
           aria-label="Next months"
           ml={2}
-          isDisabled={currentSlide === totalSlides - 1} // Disable if on the last slide
+          isDisabled={currentSlide === totalSlides - 1}
         />
       </Flex>
 
-      {/* Event Modal remains the same */}
       <Modal isOpen={isOpen} onClose={onClose} size="md">
         <ModalOverlay />
         <ModalContent>
