@@ -21,9 +21,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import SwiperCore, { Navigation } from "swiper";
-import "swiper/swiper-bundle.css"; // Core Swiper styles
-import "swiper/components/navigation/navigation.min.css"; // Navigation module styles
+
 import {
   format,
   startOfMonth,
