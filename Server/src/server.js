@@ -20,8 +20,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Sample route
 
 const noteRoutes = require("./routes/noteRoutes");
+const userRoutes = require("./routes/userRoutes");
 app.use("/api", noteRoutes); // Prefix all note routes with /api/notes
-
+app.use("/api/users", userRoutes);
 app.get("/api", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
