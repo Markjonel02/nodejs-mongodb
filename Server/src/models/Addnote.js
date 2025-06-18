@@ -11,9 +11,9 @@ const AddnoteSchema = new mongoose.Schema(
       required: true,
     },
     color: {
-      // To store the color associated with the note (e.g., 'yellow.200' from Chakra UI)
+   
       type: String,
-      default: "gray.200", // A default color if none is provided
+      default: "gray.200",
     },
     isArchived: {
       type: Boolean,

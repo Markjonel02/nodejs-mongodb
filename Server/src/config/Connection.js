@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
 const connectDB = async () => {
-  const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/NoteApplication";
+  const MONGO_URI = process.env.MONGO_URI;
 
   if (!MONGO_URI) {
     console.error("MongoDB connection error: MONGO_URI is not defined.");
@@ -18,3 +18,4 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
+ 
