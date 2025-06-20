@@ -259,7 +259,6 @@ const Archivednotes = () => {
     [currentItems] // Important: Select only notes on the current page
   );
 
-  // --- Delete Handlers ---
   const handleDeleteSelected = async () => {
     onDeleteAllClose(); // Close the dialog immediately
     if (!selectedNotes.size) return;
