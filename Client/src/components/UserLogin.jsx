@@ -1,5 +1,5 @@
-import { useState } from "react";
-import axios from "axios";
+// UserLogin.jsx
+import React, { useState } from "react";
 import {
   Box,
   Flex,
@@ -12,27 +12,30 @@ import {
   Text,
   IconButton,
   useColorModeValue,
-  useToast, // Import useToast for notifications
+  useToast,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import axios from "axios";
 
-//accept on loggedin as props from the app
 const UserLogin = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [identifier, setIdentifier] = useState(""); //state for username and email input
-  const [password, setPasword] = useState(""); //for password input
-  const [isLoading, setLoading] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const toast = useToast();
 
   const handleLogin = async () => {
-    setLoading(true); //loading when process start
+    setLoading(true);
 
     try {
       const response = await axios.post(
         "http://localhost:5000/api/user/userlogin",
-        { identifier, password } //Axios automatically serializes this to JSON
+        {
+          identifier,
+          password,
+        }
       );
-      // Axios wraps the response data in `response.data`
+
       const data = response.data;
 
       toast({
@@ -41,30 +44,33 @@ const UserLogin = ({ onLoginSuccess }) => {
         status: "success",
         duration: 3000,
         isClosable: true,
+        position: "top",
       });
 
-      // Call the onLoginSuccess prop from App.jsx to update the parent state
+      // --- ADDITIONS FOR PERSISTENCE ---
+      // 1. Store a flag in localStorage
+      localStorage.setItem("isLoggedIn", "true");
+      // 2. Store the user object in localStorage (as a string)
+      localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+      // --- END ADDITIONS ---
+
       if (onLoginSuccess) {
-        onLoginSuccess();
+        onLoginSuccess(data.user);
       }
     } catch (error) {
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         console.error("Login error response data:", error.response.data);
         console.error("Login error status:", error.response.status);
-
         toast({
-          title: "Login Failed",
+          title: "Login Failed.",
           description:
             error.response.data.message || "An unexpected error occurred.",
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top",
         });
       } else if (error.request) {
-        // The request was made but no response was received
-        // `error.request` is an instance of XMLHttpRequest in the browser and an http.ClientRequest in node.js
         console.error("Login error request:", error.request);
         toast({
           title: "Network Error.",
@@ -73,9 +79,9 @@ const UserLogin = ({ onLoginSuccess }) => {
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top",
         });
       } else {
-        // Something happened in setting up the request that triggered an Error
         console.error("Error setting up login request:", error.message);
         toast({
           title: "Error.",
@@ -83,12 +89,14 @@ const UserLogin = ({ onLoginSuccess }) => {
           status: "error",
           duration: 5000,
           isClosable: true,
+          position: "top",
         });
       }
     } finally {
-      setLoading(false); //set loading off when the process finished
+      setLoading(false);
     }
   };
+
   return (
     <Flex minH="100vh" align="center" justify="center">
       <Box
@@ -105,8 +113,8 @@ const UserLogin = ({ onLoginSuccess }) => {
           </Heading>
 
           <Input
-            placeholder="Email address"
-            type="email"
+            placeholder="Email address or Username"
+            type="text"
             variant="filled"
             size="lg"
             bg={useColorModeValue("gray.100", "gray.700")}
@@ -124,7 +132,7 @@ const UserLogin = ({ onLoginSuccess }) => {
               bg={useColorModeValue("gray.100", "gray.700")}
               _hover={{ bg: useColorModeValue("gray.200", "gray.600") }}
               value={password}
-              onChange={(e) => setPasword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   handleLogin();
@@ -148,7 +156,7 @@ const UserLogin = ({ onLoginSuccess }) => {
               fontSize="md"
               _hover={{ transform: "scale(1.02)" }}
               onClick={handleLogin}
-              isLoading={isLoading}
+              isLoading={loading}
               loadingText="Signing In..."
             >
               Sign In
