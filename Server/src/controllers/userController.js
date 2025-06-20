@@ -1,15 +1,25 @@
-Users = require("../models/User");
+const Users = require("../models/User");
 
 exports.createuser = async (req, res) => {
   try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res
-        .status(404)
-        .json({ message: "username and password are required" });
+    const { username, password, firstname, lastname, email } = req.body;
+    const emailreg = "/^S+@S+.S+$/";
+    if (!username || !password || !firstname || !lastname || !email) {
+      return res.status(400).json({ message: "All Fields are required!" });
     }
-    const cUser = await Users.create({ username, passsword });
+    if (emailreg.test(email)) {
+      return res
+        .status(400)
+        .json({ message: "please enter a valid emailaddress" });
+    }
+    const cUser = await Users.create({
+      username,
+      password,
+      firstname,
+      lastname,
+      email,
+    });
+
     return res
       .status(200)
       .json({ message: "successfully created a new user!", user: cUser });
