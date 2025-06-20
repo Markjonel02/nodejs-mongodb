@@ -13,25 +13,21 @@ function App() {
   };
 
   return (
-    <>
-      <Box>
-        {isLogedin && ( // Conditionally render TopNavigation
-          <header>
-            <TopNavigation />
-          </header>
-        )}
+    <Box>
+      {isLogedin && (
+        <header>
+          <TopNavigation />
+        </header>
+      )}
 
-        {isLogedin ? (
-          // If logged in, show the Dashboard and MainContainer
-          <MainContainer>
-            <Dashboard />
-          </MainContainer>
-        ) : (
-          // If not logged in, show the Login component
-          <Login onLoginSuccess={handleLoginSuccess} />
-        )}
-      </Box>
-    </>
+      {isLogedin ? (
+        <MainContainer>
+          <Dashboard />
+        </MainContainer>
+      ) : (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      )}
+    </Box>
   );
 }
 

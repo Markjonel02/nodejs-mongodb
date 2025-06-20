@@ -285,11 +285,7 @@ const Calendar2025 = () => {
           isDisabled={currentSlide === 0}
         />
 
-        <Box
-          width="100%"
-          overflow="hidden"
-          position="relative"
-        >
+        <Box width="100%" overflow="hidden" position="relative">
           <Flex
             justifyContent="space-around"
             flexWrap="nowrap"
