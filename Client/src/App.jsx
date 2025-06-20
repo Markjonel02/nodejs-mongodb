@@ -1,10 +1,9 @@
-// App.jsx
 import { Box } from "@chakra-ui/react";
 import Dashboard from "./components/Dashboard";
 import TopNavigation from "./components/TopNavigation";
 import MainContainer from "./components/MainContainer";
 import Login from "./components/UserLogin";
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
 
 function App() {
   // Initialize state from localStorage
@@ -17,25 +16,20 @@ function App() {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // Function called on successful login from UserLogin component
+  // Called on successful login
   const handleLoginSuccess = (user) => {
     setLogedin(true);
     setLoggedInUser(user);
-    // localStorage is already updated in UserLogin, no need to duplicate here
+    // localStorage is already updated in UserLogin
   };
 
-  // Function to handle logout
   const handleLogout = () => {
     setLogedin(false);
     setLoggedInUser(null);
-    localStorage.removeItem("isLoggedIn"); // Clear login flag from localStorage
-    localStorage.removeItem("loggedInUser"); // Clear user data from localStorage
-    // Optionally, you might redirect to login page or home page
-    // window.location.href = '/login';
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("loggedInUser");
   };
 
-  // Optional: Use useEffect to re-sync if localStorage changes in other tabs/windows
-  // (More advanced, but good for robust apps)
   useEffect(() => {
     const handleStorageChange = () => {
       setLogedin(localStorage.getItem("isLoggedIn") === "true");
@@ -50,24 +44,21 @@ function App() {
   }, []);
 
   return (
-    <>
-      <Box>
-        {isLogedin && (
-          <header>
-            {/* Pass the loggedInUser object AND the handleLogout function to TopNavigation */}
-            <TopNavigation user={loggedInUser} onLogout={handleLogout} />
-          </header>
-        )}
+    <Box>
+      {isLogedin && (
+        <header>
+          <TopNavigation user={loggedInUser} onLogout={handleLogout} />
+        </header>
+      )}
 
-        {isLogedin ? (
-          <MainContainer>
-            <Dashboard />
-          </MainContainer>
-        ) : (
-          <Login onLoginSuccess={handleLoginSuccess} />
-        )}
-      </Box>
-    </>
+      {isLogedin ? (
+        <MainContainer>
+          <Dashboard />
+        </MainContainer>
+      ) : (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      )}
+    </Box>
   );
 }
 

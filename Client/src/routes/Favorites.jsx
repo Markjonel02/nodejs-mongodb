@@ -437,15 +437,7 @@ const Favorites = () => {
 
       {/* Action buttons (Select All, Unfavorite Selected) */}
       {favoriteNotes.length > 0 && ( // Only show controls if there are any notes in favorites
-        <Flex
-          justify="space-between"
-          align="center"
-          mb={6}
-          p={4}
-          bg="white"
-          borderRadius="lg"
-          shadow="sm"
-        >
+        <Flex justify="space-between" align="center" mb={6} p={4}>
           <Checkbox
             // Check if all notes on the current page are selected
             isChecked={
