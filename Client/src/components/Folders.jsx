@@ -68,15 +68,10 @@ const notes = [
 ];
 
 const Folders = () => {
-  const [activeFolderTab, setActiveFolderTab] = useState("Todays");
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
 
   // Disclosure hooks for modals
-  const {
-    isOpen: isFolderModalOpen,
-    onOpen: onFolderModalOpen,
-    onClose: onFolderModalClose,
-  } = useDisclosure();
+
   const {
     isOpen: isNoteModalOpen,
     onOpen: onNoteModalOpen,
@@ -89,14 +84,6 @@ const Folders = () => {
   // State for new note inputs
   const [newNoteTitle, setNewNoteTitle] = useState("");
   const [newNoteContent, setNewNoteContent] = useState("");
-
-  /*   const handleAddFolder = () => {
-    // In a real application, you'd add logic here to save the new folder
-    // For now, we'll just log it and close the modal
-    console.log("New Folder Title:", newFolderTitle);
-    setNewFolderTitle(""); // Clear the input
-    onFolderModalClose();
-  }; */
 
   const handleAddNote = () => {
     // In a real application, you'd add logic here to save the new note
@@ -171,94 +158,13 @@ const Folders = () => {
               )}
             </SimpleGrid>
           </Box>
-
-          {/* Add New Note Button */}
-          {/*        <Box
-            border="2px dashed gray"
-            borderRadius="lg"
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            w={{ base: "100%", md: "120px", lg: "120px" }} // Adjusted width for responsiveness
-            h={{ base: "auto", md: "100%" }}
-            minH={{ base: "100px", md: "auto" }}
-            p={4}
-            _hover={{ borderColor: "blue.300", cursor: "pointer" }}
-            flexShrink={0}
-            onClick={onNoteModalOpen} // Open modal on click
-          >
-            <HiPencilSquare size={32} color="gray" />
-
-            <Text color="gray.400" mt={3} fontSize="sm" textAlign={"center"}>
-              Add New Note
-            </Text>
-          </Box> */}
         </Box>
-
-        {/* Add New Note Modal */}
-        {/*  <Modal isOpen={isNoteModalOpen} onClose={onNoteModalClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Add New Note</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <FormControl mb={4}>
-                <FormLabel>Note Title</FormLabel>
-                <Input
-                  placeholder="Enter note title"
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Note Content</FormLabel>
-                <Input
-                  placeholder="Enter note content"
-                  value={newNoteContent}
-                  onChange={(e) => setNewNoteContent(e.target.value)}
-                />
-              </FormControl>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" onClick={onNoteModalClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="blue" ml={3} onClick={handleAddNote}>
-                Create Note
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal> */}
       </Box>
     );
   };
 
   return (
     <Box p={6} bg="gray.50" minH="100vh">
-      {/* Centered Heading */}
-      {/*     <Heading mb={4} textAlign="center">
-        Recent Folders
-      </Heading> */}
-
-      {/* Centered ButtonGroup */}
-      {/*  <ButtonGroup mb={4} justifyContent="center" width="100%" display="flex">
-        {["Todays", "This Week", "This Month"].map((tab) => (
-          <Button
-            key={tab}
-            variant="ghost"
-            fontWeight={activeFolderTab === tab ? "bold" : "normal"}
-            borderBottom={activeFolderTab === tab ? "2px solid black" : "none"}
-            onClick={() => setActiveFolderTab(tab)}
-          >
-            {tab}
-          </Button>
-        ))}
-      </ButtonGroup> */}
-      {/* 
-      {renderFolderContent()} */}
-
       {/* Centered Heading */}
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
