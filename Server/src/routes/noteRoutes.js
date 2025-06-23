@@ -16,8 +16,16 @@ router.delete(
   authenticateToken,
   noteController.delPermanentMultiple
 );
-router.post("/restore-single-trash/:id", noteController.restoreSingleNotetrash);
-router.put("/restore-multiple-trash", noteController.restoreMultipleTrash);
+router.post(
+  "/restore-single-trash/:id",
+  authenticateToken,
+  noteController.restoreSingleNotetrash
+);
+router.put(
+  "/restore-multiple-trash",
+  authenticateToken,
+  noteController.restoreMultipleTrash
+);
 
 router.delete(
   "/trashdelete/:id",
@@ -26,7 +34,16 @@ router.delete(
 );
 
 // --- ARCHIVED NOTES ---
-router.delete("/archivednotes/:id", noteController.archivedNotes);
+router.get(
+  "/getarchivenotes",
+  authenticateToken,
+  noteController.getArchivedNotes
+);
+router.delete(
+  "/archivednotes/:id",
+  authenticateToken,
+  noteController.archivedNotes
+);
 router.delete(
   "/archivednotes/del-single/:id",
   noteController.delArchivedNoteSingle
@@ -35,7 +52,6 @@ router.post(
   "/archivednotes/delete-multiple",
   noteController.deleteMultipleArchivedNotes
 );
-router.get("/getarchivenotes", noteController.getArchivedNotes);
 
 // --- NEW RESTORE ROUTES ---
 router.put("/arcnotes/restore-multiple", noteController.restoreMultipleNotes);

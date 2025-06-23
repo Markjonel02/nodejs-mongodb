@@ -34,6 +34,11 @@ const ArchivedSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // This should match your User model's name
+      required: true, // Ensure that a user ID is always provided
+    },
     deletedAt: {
       type: Date,
       default: Date.now,
