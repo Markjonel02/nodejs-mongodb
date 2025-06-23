@@ -447,87 +447,82 @@ exports.getArchivedNotes = async (req, res) => {
 exports.delArchivedNoteSingle = async (req, res) => {
   try {
     const { id } = req.params;
-    //always find the id first
-    const archivedNote = await Archived.findById(id);
+    const userId = req.user.id;
 
-    if (!archivedNote) {
-      return res.status(404).json({ message: "error" });
-      console.log(`error cannot fint the:${archivedNote}`);
+    if (!id || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Note ID and user ID are required." });
     }
-    // 2. Create a new document in the Trash collection using the archived note's data
-    // destructure the archivedNote object to get its properties,
-    // excluding _id and __v so Mongoose generates a new _id for the trash document.
-    const trashNote = await Trash.create({
-      ...archivedNote.toObject(), // Convert Mongoose document to a plain JavaScript object
 
-      DeletedAt: new Date(), // Set the deletion timestamp
+    const archivedNote = await Archived.findOne({ _id: id, userId }).lean();
+    if (!archivedNote) {
+      return res.status(404).json({ message: "Note not found in archive." });
+    }
+
+    const trashNote = await Trash.create({
+      ...archivedNote,
+      DeletedAt: new Date(),
     });
 
-    // 3. Delete the original note from the Archived collection
-    await Archived.findByIdAndDelete(id);
+    await Archived.deleteOne({ _id: id, userId });
 
     res.status(200).json({
-      mesage: "Archived note moved to trash Successfully!",
-      trashNoteID: trashNote._id, //return new ._id in server
+      message: "Archived note moved to trash successfully!",
+      trashNoteID: trashNote._id,
     });
   } catch (error) {
     console.error("Error moving archived note to trash:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 //delete Multiple in Archived notes
 exports.deleteMultipleArchivedNotes = async (req, res) => {
   try {
-    const { ids } = req.body; // Get the array of note IDs from the request body
+    const { ids } = req.body;
+    const userId = req.user.id;
 
-    // Validate that IDs are provided and it's an array
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "No note IDs provided for deletion." });
+    if (!Array.isArray(ids) || ids.length === 0 || !userId) {
+      return res.status(400).json({
+        message:
+          "Invalid request: 'ids' must be a non-empty array of note IDs.",
+      });
     }
 
-    let movedCount = 0; // Counter for successfully moved notes
-    let failedCount = 0; // Counter for notes that failed to move
-    const failedIds = []; // To store IDs that failed
+    let movedCount = 0;
+    let failedCount = 0;
+    const failedIds = [];
 
-    // Iterate over each ID sequentially using a for...of loop
     for (const id of ids) {
       try {
-        const archivedNote = await Archived.findById(id);
-
-        // Create a new document in T
+        const archivedNote = await Archived.findOne({ _id: id, userId }).lean();
         if (archivedNote) {
           await Trash.create({
-            ...archivedNote.toObject(),
+            ...archivedNote,
             deletedAt: new Date(),
           });
 
-          // Delete from Archived
-          await Archived.findByIdAndDelete(id);
-          movedCount++; // Increment counter for each successful move
+          await Archived.deleteOne({ _id: id, userId });
+          movedCount++;
         } else {
-          // If note not found, it's not necessarily a failure but means it wasn't moved
-          console.warn(`Note with ID ${id} not found in Archived collection.`);
+          console.warn(`Note with ID ${id} not found or unauthorized.`);
         }
       } catch (innerError) {
-        // Log individual errors but don't stop the whole batch process
         console.error(`Error processing note ID ${id}:`, innerError);
         failedCount++;
         failedIds.push(id);
       }
     }
 
-    // Send a response with the counts of notes moved and any failures
     res.status(200).json({
       message: `${movedCount} note(s) moved to trash successfully. ${failedCount} note(s) failed.`,
-      movedCount: movedCount,
-      failedCount: failedCount,
-      failedIds: failedIds, // Optionally send back the IDs that failed
+      movedCount,
+      failedCount,
+      failedIds,
     });
   } catch (error) {
     console.error("Error moving multiple archived notes to trash:", error);
-    // This catch block handles errors that occur outside the loop (e.g., issues with req.body)
     res
       .status(500)
       .json({ message: "Internal server error during batch deletion." });

@@ -46,10 +46,12 @@ router.delete(
 );
 router.delete(
   "/archivednotes/del-single/:id",
+  authenticateToken,
   noteController.delArchivedNoteSingle
 );
 router.post(
   "/archivednotes/delete-multiple",
+  authenticateToken,
   noteController.deleteMultipleArchivedNotes
 );
 
