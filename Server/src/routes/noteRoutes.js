@@ -1,19 +1,30 @@
 const express = require("express");
 const router = express.Router();
 const noteController = require("../controllers/noteController");
+const { authenticateToken } = require("../middleware/authMiddleware");
 
-router.post("/notes", noteController.createNote);
-router.get("/getnotes", noteController.getNotes);
-router.put("/updatenotes/:id", noteController.updateNotes);
+router.post("/notes", authenticateToken, noteController.createNote);
+router.get("/getnotes", authenticateToken, noteController.getNotes);
+router.put("/updatenotes/:id", authenticateToken, noteController.updateNotes);
 
 // --- DELETE & TRASH ---
 
-router.get("/trashview", noteController.getTrashNotes);
-router.delete("/trashdelete/:id", noteController.delPermanently);
-router.delete("/delnotes/:id", noteController.delNotes);
-router.delete("/delpermanentmutiple", noteController.delPermanentlyMultiple);
+router.delete("/delnotes/:id", authenticateToken, noteController.delNotes);
+router.get("/trashview", authenticateToken, noteController.getTrashNotes);
+router.delete(
+  "/delpermanentmutiple",
+  authenticateToken,
+  noteController.delPermanentMultiple
+);
 router.post("/restore-single-trash/:id", noteController.restoreSingleNotetrash);
 router.put("/restore-multiple-trash", noteController.restoreMultipleTrash);
+
+router.delete(
+  "/trashdelete/:id",
+  authenticateToken,
+  noteController.delPermanently
+);
+
 // --- ARCHIVED NOTES ---
 router.delete("/archivednotes/:id", noteController.archivedNotes);
 router.delete(

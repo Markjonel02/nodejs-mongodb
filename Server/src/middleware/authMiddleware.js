@@ -1,10 +1,7 @@
 const jwt = require("jsonwebtoken"); // Import the jsonwebtoken library
 dotenv = require("dotenv"); // Import dotenv to manage environment variables
 dotenv.config(); // Load environment variables from .env file
-// It is CRUCIAL to use a strong, unique, and secret key for JWTs in production.
-// This key should be stored securely in environment variables (e.g., in a .env file).
-// For development, a fallback is provided, but it should NEVER be used in production.
-const JWT_SECRET = process.env.MONGO_URI;
+const JWT_SECRET = process.env.JWT_SECRET; // Use a strong secret from .env for signing JWTs
 
 /**
  * Middleware to authenticate JWT tokens from incoming requests.

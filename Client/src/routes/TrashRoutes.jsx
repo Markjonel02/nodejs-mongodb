@@ -20,7 +20,9 @@ import {
   AlertDialogOverlay,
   useDisclosure,
   IconButton,
-  useBreakpointValue, // Import useBreakpointValue for responsive pagination
+  useBreakpointValue,
+  Skeleton,
+  SkeletonText,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
@@ -29,16 +31,14 @@ import {
   FaHeart,
   FaCheckCircle,
   FaExclamationCircle,
-  FaRedo, // Import FaRedo for the restore icon
+  FaRedo,
 } from "react-icons/fa";
 
-// --- Import your custom hooks/components ---
-import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
-import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
-import { NoteNavigation } from "../components/NoteNavigation"; // Adjust this path if necessary
+import { usePagination } from "../customhooks/usePagination";
+import { PaginationControls } from "../components/PaginationControls";
+import { NoteNavigation } from "../components/NoteNavigation";
 
-// Import the placeholder image for no notes found
-import book from "../assets/img/wmremove-transformed.png"; // Adjust this path if necessary
+import book from "../assets/img/wmremove-transformed.png";
 
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
@@ -132,6 +132,7 @@ const Trashnotes = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [noteToDeleteId, setNoteToDeleteId] = useState(null);
   const [noteToRestoreId, setNoteToRestoreId] = useState(null);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); // NEW STATE: To track login status
 
   // --- State for sorting and searching ---
   const [currentSortBy, setCurrentSortBy] = useState("dateDesc"); // Default sort: newest deleted first
@@ -164,40 +165,118 @@ const Trashnotes = () => {
     onClose: onSingleRestoreClose,
   } = useDisclosure();
 
-  // --- Effects ---
-  useEffect(() => {
-    fetchTrashedNotes();
-  }, []);
-
   // --- Data Fetching ---
   const fetchTrashedNotes = async () => {
     setLoading(true);
     setError(null);
     try {
+      const token = localStorage.getItem("jwtToken");
+
+      if (!token) {
+        setError("Not logged in. Please log in to view trash.");
+        if (!toast.isActive("auth-required-toast")) {
+          toast({
+            id: "auth-required-toast",
+            title: "Authentication Required",
+            description: "Please log in to view your trashed notes.",
+            status: "warning",
+            position: "top",
+            duration: 5000,
+            isClosable: true,
+            icon: <FaExclamationCircle />,
+          });
+        }
+        setTrashedNotes([]); // Clear any old notes
+        setLoading(false);
+        setIsUserLoggedIn(false); // Update login status state
+        return;
+      }
+
+      setIsUserLoggedIn(true); // User is logged in, set state to true
       const { data } = await axios.get(
-        "http://localhost:5000/api/trashview" // API endpoint for trash
+        "http://localhost:5000/api/trashview", // API endpoint for trash
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
       );
       setTrashedNotes(data);
     } catch (err) {
       console.error("Error fetching trashed notes:", err);
-      setError("Failed to load trashed notes.");
-      if (!toast.isActive(fetchErrorToastId)) {
-        toast({
-          id: fetchErrorToastId,
-          title: "Failed to load notes",
-          description: "There was an error fetching your trashed notes.",
-          status: "error",
-          position: "top",
-          duration: 5000,
-          isClosable: true,
-          icon: <FaExclamationCircle />,
-          variant: "left-accent",
-        });
+      if (
+        err.response &&
+        (err.response.status === 401 || err.response.status === 403)
+      ) {
+        setError("Session expired or unauthorized. Please log in again.");
+        if (!toast.isActive("auth-expired-toast")) {
+          toast({
+            id: "auth-expired-toast",
+            title: "Unauthorized",
+            description:
+              "Your session has expired or you are not authorized. Please log in.",
+            status: "error",
+            position: "top",
+            duration: 5000,
+            isClosable: true,
+            icon: <FaExclamationCircle />,
+          });
+        }
+        // Clear the invalid token and user data, force re-login
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("loggedInUser");
+        setTrashedNotes([]); // Clear notes if logout/invalid token
+        setIsUserLoggedIn(false); // Update login status state
+        // Optionally, redirect to login page (requires react-router-dom or similar)
+        // navigate('/login');
+      } else {
+        setError("Failed to load trashed notes.");
+        if (!toast.isActive(fetchErrorToastId)) {
+          toast({
+            id: fetchErrorToastId,
+            title: "Failed to load notes",
+            description: "There was an error fetching your trashed notes.",
+            status: "error",
+            position: "top",
+            duration: 5000,
+            isClosable: true,
+            icon: <FaExclamationCircle />,
+            variant: "left-accent",
+          });
+        }
       }
     } finally {
       setLoading(false);
     }
   };
+
+  // NEW useEffect: To monitor localStorage for login/logout changes
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("jwtToken");
+      setIsUserLoggedIn(!!token);
+    };
+
+    checkLoginStatus(); // Set initial status
+
+    window.addEventListener("storage", checkLoginStatus); // Listen for storage changes
+
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus); // Cleanup
+    };
+  }, []);
+
+  // MODIFIED useEffect: Now fetchTrashedNotes runs when `isUserLoggedIn` changes.
+  useEffect(() => {
+    if (isUserLoggedIn) {
+      fetchTrashedNotes();
+    } else {
+      setTrashedNotes([]);
+      setLoading(false);
+      setError("Not logged in. Please log in to view trash."); // Set error explicitly here too
+    }
+  }, [isUserLoggedIn]); // Depend on `isUserLoggedIn` state
 
   // --- Search and Sort Logic (Memoized for performance) ---
   const filteredAndSortedNotes = useMemo(() => {
@@ -268,9 +347,18 @@ const Trashnotes = () => {
 
     setIsDeleting(true);
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setIsDeleting(false);
+        return;
+      }
       await axios.delete("http://localhost:5000/api/delpermanentmutiple", {
         data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
-        headers: { "Content-Type": "application/json" }, // Explicitly set headers
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the JWT here
+        },
       });
 
       toast({
@@ -288,10 +376,12 @@ const Trashnotes = () => {
       fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error deleting selected notes:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "There was an error permanently deleting the selected notes.";
       toast({
         title: "Deletion Failed",
-        description:
-          "There was an error permanently deleting the selected notes.",
+        description: errorMessage,
         status: "error",
         position: "top",
         duration: 5000,
@@ -308,8 +398,19 @@ const Trashnotes = () => {
     onSingleDeleteClose();
     setIsDeleting(true);
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setIsDeleting(false);
+        return;
+      }
       await axios.delete(
-        `http://localhost:5000/api/trashdelete/${id}` // API endpoint for single permanent deletion
+        `http://localhost:5000/api/trashdelete/${id}`, // API endpoint for single permanent deletion
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
       );
       toast({
         title: "Note Permanently Deleted",
@@ -329,9 +430,12 @@ const Trashnotes = () => {
       fetchTrashedNotes(); // Re-fetch notes to update UI
     } catch (err) {
       console.error("Error deleting single note:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        "There was an error permanently deleting this note.";
       toast({
         title: "Deletion Failed",
-        description: "There was an error permanently deleting this note.",
+        description: errorMessage,
         status: "error",
         position: "top",
         duration: 5000,
@@ -352,9 +456,20 @@ const Trashnotes = () => {
 
     setIsRestoring(true);
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setIsRestoring(false);
+        return;
+      }
       const response = await axios.put(
         "http://localhost:5000/api/restore-multiple-trash", // API endpoint to restore from trash to main notes
-        { ids: Array.from(selectedNotes) }
+        { ids: Array.from(selectedNotes) },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
       );
       toast({
         title: "Notes Restored",
@@ -394,8 +509,20 @@ const Trashnotes = () => {
     onSingleRestoreClose();
     setIsRestoring(true);
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setIsRestoring(false);
+        return;
+      }
       const response = await axios.post(
-        `http://localhost:5000/api/restore-single-trash/${id}` // API endpoint to restore single note from trash
+        `http://localhost:5000/api/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+        {}, // Empty body for POST request if only ID is in URL
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
       );
       toast({
         title: "Note Restored",
@@ -499,15 +626,52 @@ const Trashnotes = () => {
   );
 
   // --- Loading and Empty State ---
-  if (loading)
-    return (
-      <Flex justify="center" align="center" minH="50vh">
-        <Spinner size="xl" color="purple.500" />
-        <Text ml={4} color="gray.600">
-          Loading trash notes...
-        </Text>
-      </Flex>
-    );
+  if (loading) {
+    // Show skeleton if logged in and loading, else spinner
+    if (isUserLoggedIn) {
+      return (
+        <SimpleGrid
+          columns={{ base: 1, sm: 2, md: 2, lg: 4 }} // Columns for skeleton loading
+          spacing={6}
+          p={8}
+          mt={4}
+          gap={4}
+        >
+          {[...Array(notesPerPage)].map((_, index) => (
+            <Box
+              key={index}
+              p={6}
+              bg="gray.100"
+              borderRadius="lg"
+              position="relative"
+              width="100%"
+              boxShadow="md"
+              textAlign="left"
+            >
+              <Skeleton height="30px" width="30px" mb={4} />
+              <SkeletonText mt="4" noOfLines={1} spacing="4" height="20px" />
+              <SkeletonText
+                mt="4"
+                noOfLines={3}
+                spacing="4"
+                skeletonHeight="10px"
+              />
+              <Skeleton mt="4" height="15px" width="50%" />
+            </Box>
+          ))}
+        </SimpleGrid>
+      );
+    } else {
+      return (
+        <Flex justify="center" align="center" minH="50vh">
+          <Spinner size="xl" color="purple.500" />
+          <Text ml={4} color="gray.600">
+            Loading...
+          </Text>
+        </Flex>
+      );
+    }
+  }
 
   // --- Main Component Render ---
   return (
@@ -516,16 +680,18 @@ const Trashnotes = () => {
         Your Trash
       </Heading>
 
-      {/* Note Navigation (Search and Sort) */}
-      <NoteNavigation
-        onSearch={handleSearchChange}
-        onSort={handleSortChange}
-        currentSearchTerm={currentSearchTerm} // Pass current state
-        currentSortBy={currentSortBy} // Pass current state
-      />
+      {/* Conditionally render NoteNavigation based on login status */}
+      {isUserLoggedIn && (
+        <NoteNavigation
+          onSearch={handleSearchChange}
+          onSort={handleSortChange}
+          currentSearchTerm={currentSearchTerm}
+          currentSortBy={currentSortBy}
+        />
+      )}
 
       {/* Action buttons (Select All, Restore Selected, Delete Selected) */}
-      {trashedNotes.length > 0 && ( // Only show controls if there are any notes in trash
+      {isUserLoggedIn && trashedNotes.length > 0 && (
         <Flex
           justify="space-between"
           align="center"
@@ -536,12 +702,10 @@ const Trashnotes = () => {
           shadow="sm"
         >
           <Checkbox
-            // Check if all notes on the current page are selected
             isChecked={
               selectedNotes.size === currentItems.length &&
               currentItems.length > 0
             }
-            // Check if some but not all notes on the current page are selected
             isIndeterminate={
               selectedNotes.size > 0 && selectedNotes.size < currentItems.length
             }
@@ -556,7 +720,7 @@ const Trashnotes = () => {
               variant="ghost"
               leftIcon={<FaRedo />}
               onClick={onRestoreAllOpen}
-              isDisabled={!selectedNotes.size} // Disable if no notes are selected
+              isDisabled={!selectedNotes.size}
               isLoading={isRestoring}
             >
               Restore ({selectedNotes.size})
@@ -566,7 +730,7 @@ const Trashnotes = () => {
               colorScheme="red"
               leftIcon={<FaTrashAlt />}
               onClick={onDeleteAllOpen}
-              isDisabled={!selectedNotes.size} // Disable if no notes are selected
+              isDisabled={!selectedNotes.size}
               isLoading={isDeleting}
             >
               Delete Permanently ({selectedNotes.size})
@@ -575,69 +739,72 @@ const Trashnotes = () => {
         </Flex>
       )}
 
-      {currentItems.length > 0 ? ( // Display notes if there are items on the current page after filtering/sorting
-        <SimpleGrid columns={{ base: 1, sm: 2, md: 2, lg: 4 }} spacing={6}>
-          {renderedNotes}
-        </SimpleGrid>
-      ) : (
-        // Conditional rendering for the "no notes" message and its background
-        <VStack
-          spacing={4}
-          textAlign="center"
-          mt={8}
-          // Apply background/shadow only if there are NO filtered notes at all
-          // or if the initial fetch resulted in no notes.
-          {...(filteredAndSortedNotes.length === 0 && !loading
-            ? { p: 10 }
-            : {})}
-        >
-          <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
-            {
-              (currentSearchTerm || currentSortBy !== "dateDesc") &&
+      {/* Conditional rendering for notes grid or empty state */}
+      {isUserLoggedIn ? ( // If logged in, show notes or empty message
+        currentItems.length > 0 ? (
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 2, lg: 4 }} spacing={6}>
+            {renderedNotes}
+          </SimpleGrid>
+        ) : (
+          <VStack
+            spacing={4}
+            textAlign="center"
+            mt={8}
+            {...(filteredAndSortedNotes.length === 0 && !loading
+              ? { p: 10 }
+              : {})}
+          >
+            <Text fontSize="1.1em" color="gray.600" fontWeight="semibold">
+              {(currentSearchTerm || currentSortBy !== "dateDesc") &&
               filteredAndSortedNotes.length === 0 &&
               !loading
-                ? "No matching notes found in trash." // When search/sort yields no results
-                : trashedNotes.length === 0 && !loading // When there are absolutely no notes in trash
+                ? "No matching notes found in trash."
+                : trashedNotes.length === 0 && !loading
                 ? "Your trash is empty."
-                : filteredAndSortedNotes.length === 0 && loading // Still loading, but no notes yet
-                ? "" // Don't show "no notes" if still loading
-                : currentItems.length === 0 && filteredAndSortedNotes.length > 0 // When notes exist but not on current page due to pagination
+                : currentItems.length === 0 && filteredAndSortedNotes.length > 0
                 ? "No matching notes found on this page in trash."
-                : "" // Should not happen if currentItems.length > 0
-            }
-          </Text>
-          {/* Display book image only when there are no notes at all or no matching results */}
-          {(trashedNotes.length === 0 ||
-            filteredAndSortedNotes.length === 0 ||
-            currentItems.length === 0) &&
-            !loading && (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                w="200px" // Adjust width as needed
-                h="auto"
-                mx="auto"
-                mt={4} // Add some margin top
-              >
-                <img
-                  src={book}
-                  alt="No notes"
-                  style={{ display: "block", margin: "auto", maxWidth: "100%" }}
-                />
-              </Box>
-            )}
-          {error && (
-            <Text fontSize="md" color="red.500">
-              Error: {error}
+                : ""}
             </Text>
-          )}
-        </VStack>
+            {(trashedNotes.length === 0 ||
+              filteredAndSortedNotes.length === 0 ||
+              currentItems.length === 0) &&
+              !loading && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  w="200px"
+                  h="auto"
+                  mx="auto"
+                  mt={4}
+                >
+                  <img
+                    src={book}
+                    alt="No notes"
+                    style={{
+                      display: "block",
+                      margin: "auto",
+                      maxWidth: "100%",
+                    }}
+                  />
+                </Box>
+              )}
+            {error && (
+              <Text fontSize="md" color="red.500">
+                Error: {error}
+              </Text>
+            )}
+          </VStack>
+        )
+      ) : (
+        // If not logged in, show a direct message
+        <Text textAlign="center" mt={8} fontSize="lg" color="red.500">
+          Not logged in. Please log in to view trash notes.
+        </Text>
       )}
 
       {/* Pagination Controls */}
-      {/* Only show pagination if there are filtered and sorted notes to paginate */}
-      {filteredAndSortedNotes.length > 0 && !loading && (
+      {isUserLoggedIn && filteredAndSortedNotes.length > 0 && !loading && (
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -646,6 +813,7 @@ const Trashnotes = () => {
       )}
 
       {/* --- AlertDialogs for Confirmations (unchanged) --- */}
+      {/* ... (AlertDialogs as per your original code) ... */}
 
       {/* AlertDialog for Delete Selected Notes (Permanent) */}
       <AlertDialog

@@ -78,7 +78,7 @@ const Sidebar = ({ onNoteAdded }) => {
   };
 
   const handleSaveNote = async () => {
-    // Input validation: ensure title and content are not empty
+    // Input validation... (keep existing code)
     if (!newNoteTitle.trim() || !newNoteContent.trim()) {
       toast({
         title: "Input missing.",
@@ -91,17 +91,50 @@ const Sidebar = ({ onNoteAdded }) => {
       return;
     }
 
-    try {
-      // Send a POST request to the backend API to save the note
-      const response = await axios.post("http://localhost:5000/api/notes", {
-        title: newNoteTitle,
-        notes: newNoteContent,
-        color: selectedColor,
+    // --- START OF FIX ---
+
+    // 1. Retrieve the JWT token from storage (e.g., localStorage)
+    const token = localStorage.getItem("jwtToken"); // Assuming you save it as 'token' on login
+
+    // 2. Check if a token exists
+    if (!token) {
+      toast({
+        title: "Authentication required.",
+        description: "Please log in to create notes.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
       });
+      // Optionally, redirect to login page
+      // history.push('/login'); // If you're using react-router-dom's useHistory
+      return;
+    }
+
+    try {
+      // 3. Send a POST request to the backend API, including the Authorization header
+      const response = await axios.post(
+        "http://localhost:5000/api/notes",
+        {
+          // Request body
+          title: newNoteTitle,
+          notes: newNoteContent,
+          color: selectedColor,
+        },
+        {
+          // Configuration object for axios, including headers
+          headers: {
+            "Content-Type": "application/json", // Good practice to explicitly set
+            Authorization: `Bearer ${token}`, // THIS IS THE CRITICAL LINE
+          },
+        }
+      );
+
+      // --- END OF FIX ---
 
       console.log("Note saved successfully:", response.data);
 
-      // Display success toast
+      // Display success toast... (keep existing code)
       toast({
         title: "Note created.",
         description: "Your note has been successfully saved.",
@@ -111,28 +144,24 @@ const Sidebar = ({ onNoteAdded }) => {
         position: "top",
       });
 
-      // Reset form fields and hide the form
+      // Reset form fields and hide the form... (keep existing code)
       setNewNoteTitle("");
       setNewNoteContent("");
       setSelectedColor("gray.200");
       setHidden(false);
 
-      // Close overlay on small screens after saving
       if (isSmallScreen) {
         setIsOverlayOpen(false);
       }
 
-      // Call parent's onNoteAdded callback if provided
       if (onNoteAdded) {
         onNoteAdded();
       }
     } catch (error) {
       console.error("Error saving note:", error);
-      // Extract error message from axios response or provide a generic one
       const errorMessage =
         error.response?.data?.message ||
         "Something went wrong. Please try again.";
-      // Display error toast
       toast({
         title: "Error saving note.",
         description: errorMessage,

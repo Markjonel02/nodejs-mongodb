@@ -34,6 +34,11 @@ const AddnoteSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId, // Defines this as an ObjectId
+      ref: "User", // References the 'User' model
+      required: true, // A note must belong to a user
+    },
     /*     user: { type: mongoose.Types.ObjectId, ref: "User", required: true }, */
   },
 
