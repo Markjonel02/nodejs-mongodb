@@ -173,12 +173,18 @@ const Archivednotes = () => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
+      const token = localStorage.getItem("jwtToken");
       const { data } = await axios.get(
-        "http://localhost:5000/api/getarchivenotes"
+        "http://localhost:5000/api/getarchivenotes",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // 👈 Send token
+          },
+        }
       );
       setArchivedNotes(data);
     } catch (err) {
-      console.error("Error fetching archived notes:", err); // Log the full error
+      console.error("Error fetching archived notes:", err);
       setError("Failed to load archived notes.");
       if (!toast.isActive(fetchErrorToastId)) {
         toast({

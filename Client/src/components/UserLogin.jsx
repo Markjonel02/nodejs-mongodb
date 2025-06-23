@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Flex,
@@ -17,6 +18,7 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
 
 const UserLogin = ({ onLoginSuccess }) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +36,7 @@ const UserLogin = ({ onLoginSuccess }) => {
           password,
         }
       );
-
+      navigate("/"); // Redirect to the home page or dashboard after successful login
       const data = response.data;
 
       toast({
