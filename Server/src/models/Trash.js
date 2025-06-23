@@ -11,28 +11,40 @@ const TrashSchema = new mongoose.Schema(
       required: true,
     },
     color: {
-      // To store the color associated with the note (e.g., 'yellow.200' from Chakra UI)
       type: String,
-      default: "gray.200", // A default color if none is provided
+      default: "gray.200",
+    },
+    isArchived: {
+      type: Boolean,
+      default: false,
+    },
+    ArchivedAt: {
+      type: Date,
+      default: null,
     },
     isFavorite: {
       type: Boolean,
       default: false, // Default value for favorite status
     },
-    archivedAt: {
-      // Keep this from the original archived note
-      type: Date,
-      default: Date.now,
-    },
     createdAt: {
       type: Date,
       default: Date.now,
     },
-    deletedAt: {
+    updatedAt: {
       type: Date,
       default: Date.now,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // This should match your User model's name
+      required: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: Date.now, // Automatically set to the current date when the note is deleted
+    },
   },
+
   {
     timestamps: true,
   }

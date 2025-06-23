@@ -33,7 +33,7 @@ import {
   Flex,
   Skeleton,
   SkeletonText,
-  useBreakpointValue, // Import useBreakpointValue
+  useBreakpointValue,
 } from "@chakra-ui/react";
 
 import { FiMoreHorizontal } from "react-icons/fi";
@@ -50,11 +50,14 @@ import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
+// Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
+// to force a refetch (e.g., after creating a new note).
 const Folders = ({ shouldRefetchNotes }) => {
   const [activeNoteTab, setActiveNoteTab] = useState("Todays");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); // NEW STATE: To track login status
 
   const [currentSortBy, setCurrentSortBy] = useState("dateDesc");
   const [currentSearchTerm, setCurrentSearchTerm] = useState("");
@@ -103,24 +106,100 @@ const Folders = ({ shouldRefetchNotes }) => {
     setError(null);
 
     try {
-      const response = await axios.get("http://localhost:5000/api/getnotes");
+      const token = localStorage.getItem("jwtToken"); // Make sure 'jwtToken' is the key you used
+
+      if (!token) {
+        setError("Not logged in. Please log in to view notes.");
+        displayToast(
+          "Authentication Required",
+          "Please log in to view your notes.",
+          "warning"
+        );
+        setNotes([]); // Clear any old notes if not logged in
+        setLoading(false);
+        setIsUserLoggedIn(false); // Update login status state
+        return;
+      }
+
+      // If token exists, proceed with fetch
+      setIsUserLoggedIn(true); // User is logged in, set state to true
+      const response = await axios.get("http://localhost:5000/api/getnotes", {
+        headers: {
+          Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
+        },
+      });
       setNotes(response.data);
     } catch (err) {
       console.error("Error fetching notes:", err);
-      setError("Failed to load notes. Please try again later.");
-      displayToast(
-        "Error fetching notes.",
-        "Could not load notes from the server.",
-        "error"
-      );
+      if (
+        err.response &&
+        (err.response.status === 401 || err.response.status === 403)
+      ) {
+        // If unauthorized or forbidden, it means the token is invalid/expired
+        setError("Session expired or unauthorized. Please log in again.");
+        displayToast(
+          "Unauthorized",
+          "Your session has expired or you are not authorized. Please log in.",
+          "error"
+        );
+        // Clear the invalid token and user data, force re-login
+        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("loggedInUser");
+        setNotes([]); // Clear notes if logout/invalid token
+        setIsUserLoggedIn(false); // Update login status state
+        // Optionally, redirect to login page (requires react-router-dom or similar)
+        // navigate('/login');
+      } else {
+        setError("Failed to load notes. Please try again later.");
+        displayToast(
+          "Error fetching notes.",
+          "Could not load notes from the server.",
+          "error"
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // NEW useEffect: To monitor localStorage for login/logout changes
   useEffect(() => {
-    fetchNotes();
-  }, [shouldRefetchNotes]);
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("jwtToken");
+      // Set the local state based on the presence of the token
+      setIsUserLoggedIn(!!token);
+    };
+
+    // Run once on component mount to set initial status
+    checkLoginStatus();
+
+    // Listen for storage events (e.g., if another tab logs in/out)
+    window.addEventListener("storage", checkLoginStatus);
+
+    // Cleanup function for the event listener
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+    };
+  }, []); // Empty dependency array means this runs only once on mount
+
+  // MODIFIED useEffect: Now fetchNotes runs when `isUserLoggedIn` changes (after a login/logout)
+  // or when `shouldRefetchNotes` changes (from parent component after CRUD operations).
+  useEffect(() => {
+    if (isUserLoggedIn) {
+      // Only attempt to fetch notes if the user is considered logged in
+      fetchNotes();
+    } else {
+      // If user is not logged in, clear notes and ensure loading state is off
+      setNotes([]);
+      setLoading(false);
+      setError("Not logged in. Please log in to view notes."); // Set error explicitly here too
+    }
+  }, [isUserLoggedIn, shouldRefetchNotes]); // Depend on `isUserLoggedIn` state
+
+  // All other handlers (confirmDelete, confirmArchive, handleToggleFavorite, confirmUpdate)
+  // should also retrieve the token from localStorage before making API calls.
+  // I will add token checks to those below for completeness if they are also protected.
 
   const handleSearchChange = useCallback((term) => {
     setCurrentSearchTerm(term);
@@ -156,8 +235,20 @@ const Folders = ({ shouldRefetchNotes }) => {
     onDeleteClose();
 
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.delete(
-        `http://localhost:5000/api/delnotes/${noteToDelete}`
+        `http://localhost:5000/api/delnotes/${noteToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (response.status === 200) {
@@ -169,7 +260,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           response.data.message || "Note has been successfully moved to Trash.",
           "success"
         );
-        fetchNotes();
+        // fetchNotes(); // Can optimize: no need to refetch all if we just filter locally
       } else {
         throw new Error(
           response.data.message || "Failed to move note to trash."
@@ -195,8 +286,20 @@ const Folders = ({ shouldRefetchNotes }) => {
     onArchiveClose();
 
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.delete(
-        `http://localhost:5000/api/archivednotes/${noteToArchive}`
+        `http://localhost:5000/api/archivednotes/${noteToArchive}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -208,7 +311,7 @@ const Folders = ({ shouldRefetchNotes }) => {
             "Note has been successfully moved to Archived.",
           "info"
         );
-        fetchNotes();
+        // fetchNotes(); // Can optimize: no need to refetch all if we just filter locally
       } else {
         throw new Error(response.data.message || "Failed to archive the note.");
       }
@@ -230,9 +333,21 @@ const Folders = ({ shouldRefetchNotes }) => {
     setError(null);
 
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.put(
         `http://localhost:5000/api/favorites/${noteId}`,
-        { isFavorite: !currentIsFavorite }
+        { isFavorite: !currentIsFavorite },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (response.status === 200) {
@@ -291,12 +406,24 @@ const Folders = ({ shouldRefetchNotes }) => {
     }
 
     try {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        displayToast("Error", "Not authorized. Please log in.", "error");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.put(
         `http://localhost:5000/api/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
           color: updatedColor,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -309,7 +436,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           "Note has been successfully updated.",
           "success"
         );
-        await fetchNotes();
+        await fetchNotes(); // Re-fetch all notes to ensure data consistency
       } else {
         const errorMessage =
           response.data.message || "Failed to update the note.";
@@ -371,7 +498,18 @@ const Folders = ({ shouldRefetchNotes }) => {
   );
 
   const renderNoteContent = () => {
-    if (error) {
+    // Check if not logged in and not loading, then show the login message
+    if (!isUserLoggedIn && !loading) {
+      return (
+        <Text textAlign="center" mt={8} color="red.500">
+          Not logged in. Please log in to view notes.
+        </Text>
+      );
+    }
+
+    // Existing error handling for other errors (e.g., network issues)
+    if (error && isUserLoggedIn) {
+      // Only show other errors if logged in
       return (
         <Text textAlign="center" mt={8} color="red.500">
           {error}
@@ -389,7 +527,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       );
     }
 
-    if (filteredAndSortedNotes.length === 0 && !loading) {
+    if (filteredAndSortedNotes.length === 0 && !loading && isUserLoggedIn) {
       return (
         <>
           {searchResultCountMessage}

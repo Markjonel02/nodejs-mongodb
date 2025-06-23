@@ -1,4 +1,3 @@
-// UserLogin.jsx
 import React, { useState } from "react";
 import {
   Box,
@@ -29,7 +28,7 @@ const UserLogin = ({ onLoginSuccess }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/user/userlogin",
+        "http://localhost:5000/api/user/userlogin", // Ensure this matches your backend login route
         {
           identifier,
           password,
@@ -47,12 +46,16 @@ const UserLogin = ({ onLoginSuccess }) => {
         position: "top",
       });
 
-      // --- ADDITIONS FOR PERSISTENCE ---
-      // 1. Store a flag in localStorage
+      // --- CRUCIAL ADDITION FOR JWT PERSISTENCE ---
+      // 1. Store the JWT token in localStorage
+      if (data.token) {
+        localStorage.setItem("jwtToken", data.token);
+      }
+      // 2. Store a flag in localStorage
       localStorage.setItem("isLoggedIn", "true");
-      // 2. Store the user object in localStorage (as a string)
+      // 3. Store the user object in localStorage (as a string)
       localStorage.setItem("loggedInUser", JSON.stringify(data.user));
-      // --- END ADDITIONS ---
+      // --- END CRUCIAL ADDITION ---
 
       if (onLoginSuccess) {
         onLoginSuccess(data.user);

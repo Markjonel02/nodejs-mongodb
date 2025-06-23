@@ -7,62 +7,152 @@ const mongoose = require("mongoose");
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
   console.log("Request body:", req.body); // Check if data is coming through
+
   try {
+    // IMPORTANT: This controller ASSUMES that the `authenticateToken` middleware
+    // has run BEFORE this controller and has populated `req.user` with the
+    // decoded JWT payload (e.g., { id: userId, username: userUsername }).
+
+    // 1. Get the authenticated user's ID from req.user
+    const userId = req.user.id;
+
+    // Check if userId is available (should be if middleware ran correctly)
+    if (!userId) {
+      console.warn("Attempt to create note without authenticated user ID.");
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found. Please log in." });
+    }
+
     const { title, notes, color } = req.body;
-    // ... rest of your code ...
-    console.log("Attempting to create note in DB...");
-    const note = await Addnote.create({ title, notes, color });
+
+    // Basic input validation (optional, but good practice)
+    if (!title || !notes) {
+      return res
+        .status(400)
+        .json({ message: "Title and notes content are required." });
+    }
+
+    console.log("Attempting to create note in DB for user:", userId);
+    // 2. Create the note, associating it with the authenticated userId
+    const note = await Addnote.create({
+      title,
+      notes,
+      color: color || "#FFFFFF", // Provide a default color if not specified
+      userId: userId, // Associate the note with the user's ID
+    });
+
     console.log("Note created successfully:", note);
     res.status(201).json({ message: "Note created successfully", note });
   } catch (error) {
     console.error("Error in createNote controller:", error); // Log the full error object
-    res.status(500).json({ message: "Internal Server Error" });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 
 exports.getNotes = async (req, res) => {
   try {
+    const userId = req.user.id; // Get the authenticated user's ID from req.user
+    if (!userId) {
+      return;
+      console.warn("Attempt to fetch notes without authenticated user ID.");
+      res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found. Please log in." });
+    }
     // Corrected to fetch ALL notes as there's no user ID to filter by yet.
     // .sort({ createdAt: -1 }) is optional, but good for showing newest notes first.
-    const notes = await Addnote.find({}).sort({ createdAt: -1 });
+    const notes = await Addnote.find({ userId: userId }).sort({
+      createdAt: -1,
+    });
     res.status(200).json(notes);
   } catch (error) {
     console.error("Error fetching notes:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+exports.updateNotes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { title, notes, color } = req.body;
+
+    if (!id || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Note ID and user authentication required!" });
+    }
+
+    // Securely find the user's note and update it
+    const updatedNote = await Addnote.findOneAndUpdate(
+      { _id: id, userId: userId }, // Match both note ID and user
+      { title, notes, color },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedNote) {
+      return res
+        .status(404)
+        .json({ message: "Note not found or access denied." });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Note updated successfully!", updatedNote });
+  } catch (error) {
+    console.error(`Error updating notes: ${error}`);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 // Delete a note and move it to the Trash collection
+
 exports.delNotes = async (req, res) => {
   try {
     const { id } = req.params;
+    // Get the authenticated user's ID from req.user (populated by JWT middleware)
+    const userId = req.user.id;
 
-    if (!id) {
-      return res.status(400).json({ message: "Note ID is Required!" });
+    if (!id || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Note ID and user ID are required." });
     }
 
-    //find notes before deleting
-    const noteDelete = await Addnote.findById(id);
-    if (!noteDelete) {
-      return res.status(404).json({ message: "Note could note be Found!" });
-    }
-    //mobe and create collection
-    await Trashnotes.create(noteDelete.toObject());
-
-    await Addnote.findByIdAndDelete(id);
-
-    // Check if any document was actually deleted
-    if (noteDelete === 0) {
-      return res.status(404).json({ message: "Note not Found!" });
+    // 1. Find the note in the main collection, ensuring it belongs to the authenticated user.
+    const noteToDelete = await Addnote.findOne({ _id: id, userId });
+    if (!noteToDelete) {
+      // Return 404 if not found, or 403 if found but doesn't belong to user
+      return res.status(404).json({
+        message: "Note not found or you don't have permission to delete it.",
+      });
     }
 
-    // If successful, send a success message.
+    // 2. Create a new document in the Trashnotes collection.
+    // CRUCIAL: Pass the userId to the Trashnotes document to keep it user-specific.
+    // Use `noteToDelete.toObject()` to get a plain JS object, then add/override fields.
+    await Trashnotes.create({
+      ...noteToDelete.toObject(), // Copy all properties from the original note
+      _id: noteToDelete._id, // Keep the same _id for easier restoration later if needed
+      userId: userId, // Explicitly set the userId for the trash entry
+      deletedAt: new Date(), // Add a timestamp for when it was moved to trash
+      // You might also want to set `isArchived: false` if it was previously archived
+      // and ensure `isFavorite` is copied or reset as per your logic.
+    });
+
+    // 3. Delete the original note from the main collection.
+    await Addnote.deleteOne({ _id: id, userId });
+
     return res
       .status(200)
-      .json({ message: "Successfully deleted and moved to trash!" });
+      .json({ message: "Note successfully moved to trash!" });
   } catch (error) {
-    console.error("Error Deleting notes:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Error moving note to trash:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -97,86 +187,71 @@ exports.delPermanently = async (req, res) => {
       .json({ message: "Internal server error. Please try again later." });
   }
 };
-exports.delPermanentlyMultiple = async (req, res) => {
+exports.delPermanentMultiple = async (req, res) => {
   try {
-    const { ids } = req.body;
+    const { ids } = req.body; // Array of note IDs to permanently delete
+    const userId = req.user.id; // Get the authenticated user's ID
 
-    // Validate that IDs are provided and it's an array
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    if (!ids || !Array.isArray(ids) || ids.length === 0 || !userId) {
       return res
         .status(400)
-        .json({ message: "No valid note IDs provided for deletion." });
+        .json({ message: "Note IDs and user ID are required." });
     }
 
-    // Validate all IDs are valid MongoDB ObjectId formats
-    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    // Delete only notes belonging to the authenticated user from the Trashnotes collection
+    const result = await Trashnotes.deleteMany({
+      _id: { $in: ids },
+      userId: userId,
+    });
 
-    if (validIds.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "None of the provided IDs are valid." });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        message:
+          "No matching notes found in trash for permanent deletion or access denied.",
+      });
     }
 
-    // Perform bulk delete operation
-    const deleteResult = await Trash.deleteMany({ _id: { $in: validIds } });
-
-    return res.status(200).json({
-      message: `${deleteResult.deletedCount} note(s) permanently deleted.`,
-      deletedCount: deleteResult.deletedCount,
-      invalidIds: ids.filter((id) => !validIds.includes(id)), // Return invalid IDs for reference
+    res.status(200).json({
+      message: `${result.deletedCount} note(s) permanently deleted from trash.`,
     });
   } catch (error) {
-    console.error("Error permanently deleting multiple notes:", error);
-    return res
+    console.error(
+      "Error permanently deleting multiple notes from trash:",
+      error
+    );
+    res
       .status(500)
-      .json({ message: "Internal server error during batch deletion." });
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
 // --- RESTORE TO NOTES (Single Note from Trash) ---
 exports.restoreSingleNotetrash = async (req, res) => {
   try {
-    const { id } = req.params; // Get the ID of the note to restore from the URL parameters
+    const { id } = req.params; // ID of the note to permanently delete
+    const userId = req.user.id; // Get the authenticated user's ID
 
-    // 1. Find the note in the Trash collection
-    const trashNote = await Trash.findById(id);
-
-    // If no note is found in trash with the given ID, return a 404 error
-    if (!trashNote) {
-      return res.status(404).json({ message: "Note not found in trash." });
+    if (!id || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Note ID and user ID are required." });
     }
 
-    // 2. Create a new Addnote instance with the data from the trash note
-    // We carefully select the fields relevant for Addnote, resetting 'isArchived' and 'ArchivedAt'
-    const newAddnote = new Addnote({
-      title: trashNote.title,
-      notes: trashNote.notes,
-      color: trashNote.color,
-      isFavorite: trashNote.isFavorite,
-      isArchived: false, // When restoring, it should no longer be archived
-      ArchivedAt: null, // Reset ArchivedAt
-      createdAt: trashNote.createdAt, // Set a new createdAt timestamp for the restored note
-      updatedAt: new Date(), // Set a new updatedAt timestamp
-    });
+    // Delete only the note belonging to the authenticated user from the Trashnotes collection
+    const result = await Trashnotes.deleteOne({ _id: id, userId: userId });
 
-    // Save the new note to the Addnote collection
-    const restoredNote = await newAddnote.save();
+    if (result.deletedCount === 0) {
+      return res
+        .status(404)
+        .json({ message: "Note not found in trash or access denied." });
+    }
 
-    // 3. Delete the original note from the Trash collection
-    await Trash.findByIdAndDelete(id);
-
-    // Respond with a success message and the newly restored note
-    res.status(200).json({
-      message: "Note restored successfully!",
-      note: restoredNote,
-    });
+    res.status(200).json({ message: "Note permanently deleted from trash." });
   } catch (error) {
-    // Handle any errors that occur during the process
-    console.error("Error restoring note:", error);
-    res.status(500).json({
-      message: "Server error while restoring note.",
-      error: error.message,
-    });
+    console.error("Error permanently deleting single note from trash:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 exports.restoreMultipleTrash = async (req, res) => {
@@ -242,8 +317,18 @@ exports.restoreMultipleTrash = async (req, res) => {
 //getting deleted notes from trash
 exports.getTrashNotes = async (req, res) => {
   try {
+    const userId = req.user.id; // Get the authenticated user's ID from req.user
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found. Please log in." });
+    }
+    console.log(`Fetching trashed notes for user ID: ${userId}`);
     // Fetch all notes from the Trash collection
-    const trashNotes = await Trashnotes.find({}).sort({ createdAt: -1 });
+    const trashNotes = await Trash.find({ userId: userId }).sort({
+      deletedAt: -1,
+    });
+    console.log(`Found ${trashNotes.length} trashed notes for user ${userId}`);
     res.status(200).json(trashNotes);
   } catch (error) {
     console.error("Error fetching trash notes:", error);
@@ -252,34 +337,7 @@ exports.getTrashNotes = async (req, res) => {
 };
 
 //Archived  controller section
-exports.updateNotes = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, notes, color } = req.body;
 
-    if (!id) {
-      return res.status(400).json({ message: "Note ID is required!" });
-    }
-
-    // Find and update the note
-    const updatedNote = await Addnote.findOneAndUpdate(
-      { _id: id },
-      { $set: { title, notes, color } },
-      { new: true, runValidators: true } // Returns the updated document
-    );
-
-    if (!updatedNote) {
-      return res.status(404).json({ message: "Note not found!" });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Note updated successfully!", updatedNote });
-  } catch (error) {
-    console.error(`Error updating notes: ${error}`);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
 exports.archivedNotes = async (req, res) => {
   try {
     const { id } = req.params;

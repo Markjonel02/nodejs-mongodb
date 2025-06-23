@@ -3,7 +3,7 @@ const crypto = require("crypto");
 dotenv = require("dotenv");
 dotenv.config(); // Load environment variables from .env file
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.MONGO_URI; // Use a strong secret in .env!
+const JWT_SECRET = process.env.JWT_SECRET; // Use a strong secret in .env!
 
 exports.createuser = async (req, res) => {
   try {
