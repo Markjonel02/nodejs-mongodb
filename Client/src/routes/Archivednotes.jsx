@@ -178,7 +178,7 @@ const Archivednotes = () => {
         "http://localhost:5000/api/getarchivenotes",
         {
           headers: {
-            Authorization: `Bearer ${token}`, // 👈 Send token
+            Authorization: `Bearer ${token}`, //  Send token
           },
         }
       );
@@ -271,10 +271,17 @@ const Archivednotes = () => {
 
     setIsDeleting(true);
     try {
+      const token = localStorage.getItem("jwtToken");
       await axios.post(
         "http://localhost:5000/api/archivednotes/delete-multiple",
-        { ids: Array.from(selectedNotes) }
+        { ids: Array.from(selectedNotes) },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ Correct placement in config
+          },
+        }
       );
+
       toast({
         title: "Notes Deleted",
         description: `${selectedNotes.size} note(s) have been permanently deleted.`,
@@ -309,11 +316,16 @@ const Archivednotes = () => {
     setIsDeleting(true);
     try {
       await axios.delete(
-        `http://localhost:5000/api/archivednotes/del-single/${id}`
+        `http://localhost:5000/api/archivednotes/del-single/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        }
       );
       toast({
         title: "Note Deleted",
-        description: "The note has been permanently deleted.",
+        description: "The note has been moved to trash.",
         status: "success",
         position: "top",
         duration: 4000,
@@ -354,7 +366,12 @@ const Archivednotes = () => {
     try {
       const response = await axios.put(
         "http://localhost:5000/api/arcnotes/restore-multiple",
-        { ids: Array.from(selectedNotes) }
+        { ids: Array.from(selectedNotes) },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        }
       );
       toast({
         title: "Notes Restored",
@@ -391,12 +408,20 @@ const Archivednotes = () => {
   };
 
   const handleRestoreSingleNote = async (id) => {
-    onSingleRestoreClose(); // Close the dialog immediately
+    onSingleRestoreClose();
     setIsRestoring(true);
     try {
+      const token = localStorage.getItem("jwtToken");
       const response = await axios.put(
-        `http://localhost:5000/api/arcnotes/restore/${id}`
+        `http://localhost:5000/api/arcnotes/restore/${id}`,
+        {}, // No body payload
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
       toast({
         title: "Note Restored",
         description:
@@ -408,12 +433,14 @@ const Archivednotes = () => {
         icon: <FaCheckCircle />,
         variant: "solid",
       });
+
       setSelectedNotes((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      fetchArchivedNotes(); // Refresh the list of notes
+
+      fetchArchivedNotes(); // Refresh notes
     } catch (err) {
       console.error("Error restoring single note:", err);
       const errorMessage =
@@ -431,10 +458,9 @@ const Archivednotes = () => {
       });
     } finally {
       setIsRestoring(false);
-      setNoteToRestoreId(null); // Clear ID after operation
+      setNoteToRestoreId(null);
     }
   };
-
   // --- Dialog Openers ---
   const openSingleDeleteDialog = useCallback(
     (id) => {

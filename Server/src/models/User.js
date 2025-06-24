@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    profileImageUrl: {
+
+      type: String,
+      default: "", // Default to empty string or a generic placeholder URL
+    },
     email: {
       type: String,
       required: true,

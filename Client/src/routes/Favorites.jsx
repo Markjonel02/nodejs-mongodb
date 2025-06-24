@@ -154,7 +154,12 @@ const Favorites = () => {
     setError(null);
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/getfavorites"
+        "http://localhost:5000/api/getfavorites",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        }
       );
       setFavoriteNotes(data);
     } catch (err) {
