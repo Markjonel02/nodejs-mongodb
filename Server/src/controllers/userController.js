@@ -160,28 +160,29 @@ exports.loginuser = async (req, res) => {
   }
 };
 
-// Configure Multer for image uploads
-// IMPORTANT: For production, consider cloud storage like Cloudinary, AWS S3, etc.
-// This is a basic local storage setup.
+// Create a directory for uploads if it doesn't exist
+const uploadsDir = path.join(__dirname, "../public/uploads/profile_images");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure Multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "../assets/user_img"); // Path relative to your backend root
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
+    cb(null, uploadsDir); // Store files in the determined directory
   },
   filename: (req, file, cb) => {
-    // Append timestamp and original extension to avoid filename conflicts
+    // Generate a unique filename using user ID and timestamp
     cb(null, `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
+// Configure Multer upload middleware
 const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
   fileFilter: (req, file, cb) => {
-    // Allow only images
+    // Allow only image mimetypes
     if (!file.mimetype.startsWith("image/")) {
       return cb(new Error("Only image files are allowed!"), false);
     }
@@ -189,12 +190,16 @@ const upload = multer({
   },
 });
 
+// Export the configured Multer instance
+exports.upload = upload; // <--- This is correctly exported now
+
 // @desc    Get authenticated user profile
 // @route   GET /api/user/profile
 // @access  Private
 exports.getUserProfile = async (req, res) => {
   try {
-    const user = await Users.findById(req.user.id).select("-password"); // Exclude password
+    // req.user.id is populated by authMiddleware
+    const user = await Users.findById(req.user.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -202,7 +207,10 @@ exports.getUserProfile = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      profileImageUrl: user.profileImageUrl,
+      // Ensure profileImageUrl is relative if serving from /public
+      profileImageUrl: user.profileImageUrl
+        ? `/public${user.profileImageUrl}`.replace("/public/public", "/public")
+        : "",
       createdAt: user.createdAt,
     });
   } catch (error) {
@@ -214,7 +222,7 @@ exports.getUserProfile = async (req, res) => {
 };
 
 // @desc    Update authenticated user profile details
-// @route   PUT /api/user/profile
+// @route   PUT /api/user/updateprofile (Matches frontend endpoint)
 // @access  Private
 exports.updateUserProfile = async (req, res) => {
   try {
@@ -225,28 +233,31 @@ exports.updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Update fields if provided
-    if (name) user.name = name;
-    if (email) user.email = email;
+    // Update fields only if they are provided in the request body
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
 
-    await user.save(); // Mongoose will run validators on save
+    await user.save(); // Mongoose will run validators (e.g., unique email)
 
     res.status(200).json({
       id: user._id,
       name: user.name,
       email: user.email,
-      profileImageUrl: user.profileImageUrl,
+      profileImageUrl: user.profileImageUrl
+        ? `/public${user.profileImageUrl}`.replace("/public/public", "/public")
+        : "",
       createdAt: user.createdAt,
     });
   } catch (error) {
     console.error("Error in updateUserProfile:", error);
     if (error.code === 11000) {
-      // Duplicate key error (e.g., email already exists)
-      return res.status(400).json({
-        message: "Email already exists. Please use a different email.",
-      });
+      // MongoDB duplicate key error for unique fields
+      return res
+        .status(400)
+        .json({ message: "The provided email is already in use." });
     }
     if (error.name === "ValidationError") {
+      // Mongoose validation errors
       const messages = Object.values(error.errors).map((val) => val.message);
       return res.status(400).json({ message: messages.join(", ") });
     }
@@ -264,31 +275,31 @@ exports.uploadProfileImage = async (req, res) => {
     const user = await Users.findById(req.user.id);
 
     if (!user) {
-      // If user not found but auth middleware passed, something is wrong.
       return res.status(404).json({ message: "User not found." });
     }
 
+    // req.file is populated by Multer if upload was successful
     if (!req.file) {
-      return res.status(400).json({ message: "No image file uploaded." });
+      return res
+        .status(400)
+        .json({ message: "No image file uploaded or file type not allowed." });
     }
 
-    // If there was an old image, delete it to prevent accumulation
-    if (user.profileImageUrl) {
-      const oldImagePath = path.join(__dirname, "..", user.profileImageUrl);
-      // Check if the old path exists and is not the default placeholder
-      if (
-        fs.existsSync(oldImagePath) &&
-        !oldImagePath.includes("placehold.co")
-      ) {
-        fs.unlink(oldImagePath, (err) => {
+    // Delete old image if it exists and is not a default/placeholder
+    if (
+      user.profileImageUrl &&
+      user.profileImageUrl.startsWith("/public/uploads/profile_images")
+    ) {
+      const oldRelativePath = user.profileImageUrl.replace("/public", ""); // Remove /public prefix
+      const oldFullPath = path.join(__dirname, "..", "public", oldRelativePath);
+      if (fs.existsSync(oldFullPath)) {
+        fs.unlink(oldFullPath, (err) => {
           if (err) console.error("Error deleting old profile image:", err);
         });
       }
     }
 
-    // Store the relative path to the image
-    // Assuming your server is configured to serve static files from '/public'
-    // E.g., app.use(express.static(path.join(__dirname, 'public')));
+    // Save the new image URL relative to the 'public' static served directory
     const imageUrl = `/uploads/profile_images/${req.file.filename}`;
     user.profileImageUrl = imageUrl;
     await user.save();
@@ -297,16 +308,17 @@ exports.uploadProfileImage = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      profileImageUrl: user.profileImageUrl,
+      profileImageUrl: `/public${user.profileImageUrl}`, // Return full URL for frontend
       createdAt: user.createdAt,
     });
   } catch (error) {
     console.error("Error in uploadProfileImage:", error);
+    if (error.message === "Only image files are allowed!") {
+      // Multer fileFilter error
+      return res.status(400).json({ message: error.message });
+    }
     res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
   }
 };
-
-// Make multer upload middleware available to routes
-exports.uploadMiddleware = upload.single("profileImage"); // 'profileImage' is the field name from the frontend FormData.append

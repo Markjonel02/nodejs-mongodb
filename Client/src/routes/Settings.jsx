@@ -1,40 +1,76 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-// React Icons can sometimes be a problem in certain environments if not globally available.
-// For robustness and to address "could not resolve" errors,
-// we'll use inline SVGs or simpler textual icons if external icon libraries fail.
-// However, given `react-icons/fa` and `react-icons/fi` were mentioned, let's include them for now,
-// but be aware that if compilation still fails, they might need to be replaced with inline SVGs.
-import {
-  FaUserEdit,
-  FaEnvelope,
-  FaUpload,
-  FaSave,
-  FaCog,
-  FaCheckCircle,
-  FaExclamationCircle,
-  FaEdit,
-} from "react-icons/fa";
-import { FiCamera } from "react-icons/fi"; // For the camera icon on image upload
+// Removed react-icons imports and will use inline SVGs instead for broader compatibility.
 
 // Placeholder image URL if the user doesn't have a profile picture
 const PLACEHOLDER_IMAGE =
   "https://placehold.co/150x150/A78BFA/ffffff?text=User";
+
+// Custom Avatar Component
+const Avatar = ({ src, alt, name, size = "md" }) => {
+  const [imageError, setImageError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src);
+
+  useEffect(() => {
+    setCurrentSrc(src);
+    setImageError(false); // Reset error state when src changes
+  }, [src]);
+
+  // Determine size classes
+  const sizeClasses = {
+    sm: "w-16 h-16 text-lg",
+    md: "w-24 h-24 text-2xl",
+    lg: "w-32 h-32 text-4xl", // This maps to the original "2xl" size
+    xl: "w-40 h-40 text-5xl",
+    "2xl": "w-48 h-48 text-6xl",
+  };
+
+  const selectedSizeClass = sizeClasses[size] || sizeClasses.lg; // Default to 'lg' if unknown size
+
+  const getInitials = (fullName) => {
+    if (!fullName) return "U"; // Default initial if no name
+    const parts = fullName.split(" ");
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase();
+    }
+    return (
+      parts[0].charAt(0).toUpperCase() +
+      parts[parts.length - 1].charAt(0).toUpperCase()
+    );
+  };
+
+  const initials = getInitials(name);
+
+  return (
+    <div
+      className={`relative rounded-full overflow-hidden border-4 border-purple-300 shadow-lg flex items-center justify-center bg-purple-100 text-purple-700 font-bold ${selectedSizeClass}`}
+    >
+      {imageError || !currentSrc ? (
+        // Display initials if image fails to load or no src provided
+        <span>{initials}</span>
+      ) : (
+        // Display image
+        <img
+          src={currentSrc}
+          alt={alt}
+          className="w-full h-full object-cover"
+          onError={() => {
+            setImageError(true); // Set error state on image load failure
+            setCurrentSrc(null); // Clear src to ensure initials are shown
+          }}
+        />
+      )}
+    </div>
+  );
+};
 
 // Define a simple custom hook for fetching and updating user data
 const useUserData = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Using a custom toast/notification system since Chakra UI is being removed.
-  // In a real app, you'd implement a simple modal or inline message component.
   const showNotification = (title, description, status) => {
-    // This is a placeholder for a custom notification system.
-    // In a full app, you'd render a div with these messages.
     console.log(`Notification: ${status} - ${title}: ${description}`);
-    // For now, we'll just use a simple alert-like behavior for quick feedback
-    // Note: avoid window.alert in production, use a custom modal.
-    // Here we'll just log and rely on visual cues (spinners, error messages).
   };
 
   const fetchProfile = async () => {
@@ -70,7 +106,7 @@ const useUserData = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const { data } = await axios.put(
-        "http://localhost:5000/api/user/updateprofile",
+        "http://localhost:5000/api/user/updateprofile", // Corrected endpoint for update
         updatedFields,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -102,7 +138,7 @@ const useUserData = () => {
       formData.append("profileImage", imageFile); // 'profileImage' must match the field name in multer setup
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/user/profile/upload-img",
+        "http://localhost:5000/api/user/profile/upload-image",
         formData,
         {
           headers: {
@@ -234,7 +270,19 @@ const Settings = () => {
   if (error) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 text-red-500 p-8 text-center">
-        <FaExclamationCircle className="w-10 h-10 mb-4" />
+        {/* Inline SVG for FaExclamationCircle */}
+        <svg
+          className="w-10 h-10 mb-4"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fillRule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clipRule="evenodd"
+          ></path>
+        </svg>
         <h2 className="text-2xl font-bold mb-2">Error Loading Profile</h2>
         <p className="text-md">{error}</p>
         <button
@@ -262,7 +310,19 @@ const Settings = () => {
           <div className="absolute top-[-50px] left-[-50px] w-48 h-48 rounded-full bg-purple-100 opacity-30 filter blur-3xl z-0"></div>
           <div className="absolute bottom-[-50px] right-[-50px] w-44 h-44 rounded-full bg-pink-100 opacity-30 filter blur-3xl z-0"></div>
 
-          <FaCog className="w-16 h-16 text-purple-600 mb-4 relative z-10" />
+          {/* Inline SVG for FaCog */}
+          <svg
+            className="w-16 h-16 text-purple-600 mb-4 relative z-10"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fillRule="evenodd"
+              d="M11.49 4.09A10.023 10.023 0 0010 2a8 8 0 100 16 10.023 10.023 0 001.49-2.09l-.49-.49a6 6 0 11-8.48-8.48l.49-.49zM10 12a2 2 0 100-4 2 2 0 000 4z"
+              clipRule="evenodd"
+            ></path>
+          </svg>
           <h1 className="text-4xl font-extrabold text-purple-800 relative z-10">
             Settings
           </h1>
@@ -281,16 +341,13 @@ const Settings = () => {
               Profile Picture
             </h2>
             <div className="flex flex-col items-center gap-4">
-              <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-purple-300 shadow-lg">
-                <img
-                  src={profileImagePreview}
-                  alt="Profile Picture"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = PLACEHOLDER_IMAGE;
-                  }} // Fallback on error
-                />
-              </div>
+              {/* Using the custom Avatar component */}
+              <Avatar
+                src={profileImagePreview}
+                alt="Profile Picture"
+                name={userData?.name}
+                size="lg" // Use 'lg' to map to the previous 2xl equivalent styling
+              />
 
               <label htmlFor="file-upload" className="cursor-pointer">
                 <input
@@ -306,10 +363,30 @@ const Settings = () => {
                   onClick={() => fileInputRef.current.click()}
                   className="flex items-center px-6 py-2 border border-purple-500 text-purple-500 rounded-full
                              hover:bg-purple-50 hover:text-purple-600 transition-all duration-200
-                             relative z-10" // Added z-10 to ensure button is clickable
+                             relative z-10"
                   disabled={isImageUploading}
                 >
-                  <FiCamera className="mr-2" />
+                  {/* Inline SVG for FiCamera */}
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.865-1.73A2 2 0 0110.707 4h2.586a2 2 0 011.664.89l.865 1.73A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                    ></path>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                    ></path>
+                  </svg>
                   {isImageUploading ? (
                     <span className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-purple-500 mr-2"></div>{" "}
@@ -331,7 +408,19 @@ const Settings = () => {
                              disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isImageUploading || !profileImageFile}
                 >
-                  <FaUpload className="mr-2" />
+                  {/* Inline SVG for FaUpload */}
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M2 9.5A5.5 5.5 0 0010.5 4V2a1 1 0 011-1h1a1 1 0 011 1v2h2a1 1 0 011 1v1a1 1 0 01-1 1h-2v2a1 1 0 01-1 1v1a1 1 0 01-1-1v-1H9.5A5.5 5.5 0 004 18.5a5.5 5.5 0 005.5-5.5h-1a4.5 4.5 0 01-9 0V9.5zM15 10a1 1 0 00-1 1v2.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L16 13.586V11a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
                   Upload Image
                 </button>
               )}
@@ -350,7 +439,15 @@ const Settings = () => {
                   className="p-2 border border-purple-500 text-purple-500 rounded-full hover:bg-purple-50
                              transition-all duration-200"
                 >
-                  <FaEdit />
+                  {/* Inline SVG for FaEdit */}
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.38-2.828-2.827z"></path>
+                  </svg>
                 </button>
               )}
             </div>
@@ -364,7 +461,19 @@ const Settings = () => {
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaUserEdit className="text-gray-400" />
+                    {/* Inline SVG for FaUserEdit */}
+                    <svg
+                      className="w-5 h-5 text-gray-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                        clipRule="evenodd"
+                      ></path>
+                    </svg>
                   </span>
                   <input
                     type="text"
@@ -389,7 +498,16 @@ const Settings = () => {
                 </label>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FaEnvelope className="text-gray-400" />
+                    {/* Inline SVG for FaEnvelope */}
+                    <svg
+                      className="w-5 h-5 text-gray-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                    </svg>
                   </span>
                   <input
                     type="email"
@@ -424,7 +542,19 @@ const Settings = () => {
                     </span>
                   ) : (
                     <>
-                      <FaSave className="mr-2" />
+                      {/* Inline SVG for FaSave */}
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                          clipRule="evenodd"
+                        ></path>
+                      </svg>
                       Save Changes
                     </>
                   )}
