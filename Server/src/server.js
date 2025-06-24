@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const connectDB = require("./config/Connection");
-
+const path = require("path");
 const dotenv = require("dotenv");
 dotenv.config(); // Load environment variables from .env file
 
@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(express.static(path.join(__dirname, "public")));
 // Sample route
 
 const noteRoutes = require("./routes/noteRoutes");

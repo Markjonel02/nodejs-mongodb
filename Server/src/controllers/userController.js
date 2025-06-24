@@ -194,7 +194,7 @@ const upload = multer({
 // @access  Private
 exports.getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password"); // Exclude password
+    const user = await Users.findById(req.user.id).select("-password"); // Exclude password
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
@@ -219,7 +219,7 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const { name, email } = req.body;
-    const user = await User.findById(req.user.id);
+    const user = await Users.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -261,7 +261,7 @@ exports.updateUserProfile = async (req, res) => {
 // @access  Private
 exports.uploadProfileImage = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await Users.findById(req.user.id);
 
     if (!user) {
       // If user not found but auth middleware passed, something is wrong.

@@ -70,7 +70,7 @@ const useUserData = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const { data } = await axios.put(
-        "http://localhost:5000/api/user/profile",
+        "http://localhost:5000/api/user/updateprofile",
         updatedFields,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -102,7 +102,7 @@ const useUserData = () => {
       formData.append("profileImage", imageFile); // 'profileImage' must match the field name in multer setup
 
       const { data } = await axios.post(
-        "http://localhost:5000/api/user/profile/upload-image",
+        "http://localhost:5000/api/user/profile/upload-img",
         formData,
         {
           headers: {
