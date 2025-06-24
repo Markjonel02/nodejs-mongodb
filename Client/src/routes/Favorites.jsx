@@ -269,10 +269,15 @@ const Favorites = () => {
 
     setIsTogglingFavorite(true);
     try {
-      await axios.put(
+      await axios.patch(
         "http://localhost:5000/api/favorite/multiple-unfavorite",
         {
           ids: Array.from(selectedNotes),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
         }
       );
 
@@ -319,6 +324,12 @@ const Favorites = () => {
         `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
+          currentFavoriteStatus: currentFavoriteStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
         }
       );
 

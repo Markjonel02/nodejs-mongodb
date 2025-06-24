@@ -71,6 +71,14 @@ router.put(
 //--- FAVORITES ROUTES ---
 router.put("/favorites/:id", authenticateToken, noteController.createFavorite);
 router.get("/getfavorites", authenticateToken, noteController.getFavoriteNotes);
-router.put("/favorites/single-unfavorite/:id", noteController.unfavoriteSingle);
-router.put("/favorite/multiple-unfavorite", noteController.unfavoriteMultiple);
+router.put(
+  "/favorites/single-unfavorite/:id",
+  authenticateToken,
+  noteController.unfavoriteSingle
+);
+router.patch(
+  "/favorite/multiple-unfavorite",
+  authenticateToken,
+  noteController.unfavoriteMultiple
+);
 module.exports = router;

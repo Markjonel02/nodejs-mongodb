@@ -10,7 +10,7 @@ const TestFolder = lazy(() => import("../routes/TestFolder"));
 const TrashRoutes = lazy(() => import("../routes/TrashRoutes"));
 const Favorites = lazy(() => import("../routes/Favorites"));
 const NotFoundPage = lazy(() => import("../routes/Nopage"));
-
+const Settings = lazy(() => import("../routes/Settings"));
 const Dashboard = () => {
   const [shouldRefetchNotes, setShouldRefetchNotes] = useState(false);
 
@@ -32,6 +32,7 @@ const Dashboard = () => {
             <Route path="/archive" element={<ArchiveComponent />} />
             <Route path="/trash" element={<TrashRoutes />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/settings" element={<Settings />} />
 
             {/* 404 fallback */}
             <Route path="*" element={<NotFoundPage />} />
