@@ -594,25 +594,38 @@ exports.restoreMultipleNotes = async (req, res) => {
 exports.restoreSingleNote = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id; // This is correctly extracted from the middleware
+
+    if (!id || !userId) {
+      return res
+        .status(400)
+        .json({ message: "Note ID and user ID are required." });
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid note ID format." });
     }
 
-    const archivedNote = await Archived.findById(id);
+    const archivedNote = await Archived.findOne({ _id: id, userId }).lean();
     if (!archivedNote) {
       return res.status(404).json({ message: "Archived note not found." });
     }
 
+    // --- FIX IS HERE: Add userId to the Addnote.create object ---
     const restoredNote = await Addnote.create({
       title: archivedNote.title,
       notes: archivedNote.notes,
       color: archivedNote.color,
       isFavorite: archivedNote.isFavorite || false,
-      createdAt: archivedNote.createdAt, // Retain original creation date
+      createdAt: archivedNote.createdAt,
+      userId: userId, // <--- ADD THIS LINE
     });
 
-    await Archived.findByIdAndDelete(id);
+    // Optionally, if your Addnote schema has a updatedAt field and it's set to auto-update
+    // you might want to consider if createdAt should be specifically carried over or if the new
+    // note should get a fresh createdAt timestamp. For restoration, carrying it over might be desired.
+
+    await Archived.deleteOne({ _id: id, userId });
 
     return res.status(200).json({
       message: "Archived note restored successfully!",
@@ -620,6 +633,10 @@ exports.restoreSingleNote = async (req, res) => {
     });
   } catch (error) {
     console.error("Error restoring single archived note:", error);
+    // Be more specific in the error message if it's a validation error
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -627,28 +644,47 @@ exports.restoreSingleNote = async (req, res) => {
 exports.createFavorite = async (req, res) => {
   try {
     const { id } = req.params; // Expects ID from URL param
-    const { isFavorite } = req.body; // Expects the new status from body
-
-    // --- This is where "multiple-unfavorite" is being treated as an ID ---
-    console.log(`Request received to toggle favorite for note ID: ${id}`);
-    console.log(`New isFavorite status: ${isFavorite}`);
+    let { isFavorite } = req.body; // Expects the new status from body (boolean)
+    const userId = req.user.id;
 
     if (!id) {
       return res.status(400).json({ message: "Note ID is required." });
     }
+    if (!userId) {
+      // Should be caught by auth middleware, but good as a fallback
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID not found." });
+    }
+    if (typeof isFavorite !== "boolean") {
+      // Ensure isFavorite is a boolean
+      return res
+        .status(400)
+        .json({ message: "isFavorite status must be a boolean." });
+    }
 
-    const note = await Addnote.findByIdAndUpdate(
-      id, // Mongoose is trying to cast "multiple-unfavorite" to an ObjectId here
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid note ID format." });
+    }
+
+    const note = await Addnote.findOneAndUpdate(
+      { _id: id, userId: userId }, // Find by ID AND userId to ensure ownership
       { $set: { isFavorite: isFavorite } },
       { new: true, runValidators: true }
     );
 
     if (!note) {
-      return res.status(404).json({ message: "Note not found." });
+      return res.status(404).json({
+        message: "Note not found or you do not have permission to modify it.",
+      });
     }
-    res.status(200).json(note);
+
+    const message = isFavorite
+      ? "Note added to favorites."
+      : "Note removed from favorites.";
+    res.status(200).json({ message, note }); // Send back message and the updated note
   } catch (error) {
-    console.error("Error in createFavorite controller:", error);
+    console.error("Error in toggleFavoriteStatus controller:", error);
     if (error.name === "CastError" && error.kind === "ObjectId") {
       return res
         .status(400)
@@ -660,20 +696,35 @@ exports.createFavorite = async (req, res) => {
 exports.getFavoriteNotes = async (req, res) => {
   try {
     console.log("Fetching favorite notes...");
+    const userId = req.user.id;
 
-    const favoriteNotes = await Addnote.find({ isFavorite: true }).lean();
-
-    if (!favoriteNotes || favoriteNotes.length === 0) {
-      console.log("No favorite notes found. Returning empty array.");
-      // Change: Return 200 OK with an empty array instead of 404
-      return res.status(200).json([]); // <--- FIXED HERE
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized: User ID not found. Please log in.",
+      });
     }
 
-    console.log("Retrieved favorite notes:", favoriteNotes);
-    res.status(200).json(favoriteNotes);
+    const favoriteNotes = await Addnote.find({
+      userId,
+      isFavorite: true,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!favoriteNotes.length) {
+      console.log("No favorite notes found for user:", userId); // More specific
+      return res.status(200).json([]);
+    }
+    console.log(
+      `Retrieved ${favoriteNotes.length} favorite notes for user:`,
+      userId
+    ); // Only logs if notes exist
+    return res.status(200).json(favoriteNotes);
   } catch (error) {
     console.error("Error fetching favorite notes:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 

@@ -56,13 +56,21 @@ router.post(
 );
 
 // --- NEW RESTORE ROUTES ---
-router.put("/arcnotes/restore-multiple", noteController.restoreMultipleNotes);
+router.put(
+  "/arcnotes/restore-multiple",
+  authenticateToken,
+  noteController.restoreMultipleNotes
+);
 // Route for restoring a single note
-router.put("/arcnotes/restore/:id", noteController.restoreSingleNote); // Using PUT for idempotent update
+router.put(
+  "/arcnotes/restore/:id",
+  authenticateToken,
+  noteController.restoreSingleNote
+); // Using PUT for idempotent update
 
 //--- FAVORITES ROUTES ---
-router.put("/favorites/:id", noteController.createFavorite);
-router.get("/getfavorites", noteController.getFavoriteNotes);
+router.put("/favorites/:id", authenticateToken, noteController.createFavorite);
+router.get("/getfavorites", authenticateToken, noteController.getFavoriteNotes);
 router.put("/favorites/single-unfavorite/:id", noteController.unfavoriteSingle);
 router.put("/favorite/multiple-unfavorite", noteController.unfavoriteMultiple);
 module.exports = router;
