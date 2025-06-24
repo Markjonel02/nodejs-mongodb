@@ -4,12 +4,16 @@ const userController = require("../controllers/userController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 router.post("/usercreate", userController.createuser);
 router.post("/userlogin", userController.loginuser);
-/* router.get("/porfile", authMiddleware, userController.getUserProfile);
-router.put("/updateprofile", authMiddleware, userController.updateUserProfile); */
-/* router.post(
-  "/profile/upload-img",
+/* router.get("/profile", authMiddleware, userController.getUserProfile);
+
+// Update user profile details: Requires authentication
+router.put("/updateprofile", authMiddleware, userController.updateUserProfile); // Matches frontend endpoint
+
+// Upload profile image: Requires authentication and Multer middleware for file processing
+router.post(
+  "/profile/upload-image",
   authMiddleware,
-  userController.uploadMiddleware, // Multer middleware
+  userController.upload.single("profileImage"), // Use the exported upload instance
   userController.uploadProfileImage
 );
  */

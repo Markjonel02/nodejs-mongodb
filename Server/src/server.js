@@ -29,6 +29,10 @@ app.get("/api", (req, res) => {
 app.get("/api/user", (req, res) => {
   res.send("welcome to user");
 });
+
+app.get("/api/user/settings", (req, res) => {
+  res.send("Welcome to the Notes API!");
+});
 connectDB()
   .then(() => {
     app.listen(port, () => {
