@@ -17,6 +17,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 /* app.use(express.static(path.join(__dirname, "public"))); */
 // Sample route
+app.use(cors({
+  origin: 'https://nodejs-mongodb-two.vercel.app/', // IMPORTANT: Replace with your actual Vercel frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+
+
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -33,6 +41,8 @@ app.get("/api/user", (req, res) => {
 /* app.get("/api/user/settings", (req, res) => {
   res.send("Welcome to the Notes API!");
 }); */
+
+module.exports = app; // Export the app for testing or further configuration
 connectDB()
   .then(() => {
     app.listen(port, () => {
