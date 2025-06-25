@@ -16,7 +16,14 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 
-import { CiCalendar, CiFileOn, CiTrash, CiHeart, CiHome } from "react-icons/ci";
+import {
+  CiCalendar,
+  CiFileOn,
+  CiTrash,
+  CiHeart,
+  CiHome,
+  CiSettings,
+} from "react-icons/ci";
 import { MdAssignmentAdd } from "react-icons/md";
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
 import { HamburgerIcon } from "@chakra-ui/icons";
