@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Import Link
 import {
   Box,
   Flex,
@@ -16,6 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
+// import UserCreation from "../routes/UserCreation"; // No need to import here if it's a route
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const UserLogin = ({ onLoginSuccess }) => {
           password,
         }
       );
-      navigate("/"); // Redirect to the home page or dashboard after successful login
+      navigate("/dashboard"); // Redirect to the home page or dashboard after successful login
       const data = response.data;
 
       toast({
@@ -170,9 +171,16 @@ const UserLogin = ({ onLoginSuccess }) => {
 
           <Text align="center" fontSize="sm">
             Don’t have an account?{" "}
-            <Text as="span" color="teal.400" fontWeight="bold" cursor="pointer">
-              Sign up
-            </Text>
+            <Link to="/signup">
+              <Text
+                as="span"
+                color="teal.400"
+                fontWeight="bold"
+                cursor="pointer"
+              >
+                sign up
+              </Text>
+            </Link>
           </Text>
         </Stack>
       </Box>

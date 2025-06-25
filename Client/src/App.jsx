@@ -1,12 +1,14 @@
+// App.js
 import { Box } from "@chakra-ui/react";
-import Dashboard from "./components/Dashboard";
+import Dashboard from "./components/Dashboard"; // Keep Dashboard import
 import TopNavigation from "./components/TopNavigation";
 import MainContainer from "./components/MainContainer";
 import Login from "./components/UserLogin";
 import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom"; // Import Outlet
+import UserCreation from "./routes/UserCreation";
 
 function App() {
-  // Initialize state from localStorage
   const [isLogedin, setLogedin] = useState(() => {
     return localStorage.getItem("isLoggedIn") === "true";
   });
@@ -16,11 +18,9 @@ function App() {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // Called on successful login
   const handleLoginSuccess = (user) => {
     setLogedin(true);
     setLoggedInUser(user);
-    // localStorage is already updated in UserLogin
   };
 
   const handleLogout = () => {
@@ -28,6 +28,7 @@ function App() {
     setLoggedInUser(null);
     localStorage.removeItem("isLoggedIn");
     localStorage.removeItem("loggedInUser");
+    localStorage.removeItem("jwtToken");
   };
 
   useEffect(() => {
@@ -51,13 +52,57 @@ function App() {
         </header>
       )}
 
-      {isLogedin ? (
-        <MainContainer>
-          <Dashboard />
-        </MainContainer>
-      ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      )}
+      <Routes>
+        <Route
+          path="/login"
+          element={<Login onLoginSuccess={handleLoginSuccess} />}
+        />
+        <Route path="/signup" element={<UserCreation />} />
+
+        {/* Protected Dashboard Layout Route */}
+        <Route
+          path="/"
+          element={
+            isLogedin ? (
+              <MainContainer>
+                {/* Outlet renders the matched child route */}
+                <Outlet />
+              </MainContainer>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        >
+          {/* Nested Routes for Dashboard content */}
+          <Route index element={<Dashboard />} />{" "}
+          {/* Renders Dashboard at /dashboard */}
+          <Route path="archive" element={<Dashboard type="archive" />} />{" "}
+          {/* Pass type to Dashboard */}
+          <Route path="trash" element={<Dashboard type="trash" />} />
+          <Route path="favorites" element={<Dashboard type="favorites" />} />
+          <Route path="settings" element={<Dashboard type="settings" />} />
+          <Route path="*" element={<Dashboard type="notFound" />} />
+        </Route>
+
+        {/* Redirect from root to /dashboard if logged in, otherwise to /login */}
+        <Route
+          path="/"
+          element={
+            isLogedin ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        {/* Fallback for any unmatched routes outside of login/signup/dashboard */}
+        <Route
+          path="*"
+          element={
+            <Navigate to={isLogedin ? "/dashboard" : "/login"} replace />
+          }
+        />
+      </Routes>
     </Box>
   );
 }
