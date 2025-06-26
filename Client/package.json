@@ -1,6 +1,6 @@
 {
   "proxy": "http://localhost:5000",
-  "name": "portfolio",
+  "name": "client",
   "private": true,
   "version": "0.0.0",
   "type": "module",

@@ -17,6 +17,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 /* app.use(express.static(path.join(__dirname, "public"))); */
 // Sample route
+// Configure CORS to allow requests from your Vercel frontend URL
+const corsOptions = {
+  origin: process.env.CLIENT_URL, // Set this in Vercel env variables
+  credentials: true, // If you're sending cookies/auth headers
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
