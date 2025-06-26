@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Import useNavigate and Link
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Flex,
@@ -12,54 +12,36 @@ import {
   Text,
   IconButton,
   useColorModeValue,
-  useToast, // Import useToast hook from Chakra UI
+  useToast,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"; // Import Chakra UI icons
-import axios from "axios"; // For making HTTP requests
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import axios from "axios";
 
-// Main UserCreation functional component
 const UserCreation = () => {
-  const navigate = useNavigate(); // Hook for programmatic navigation
-  const toast = useToast(); // Hook for displaying Chakra UI toasts
+  const navigate = useNavigate();
+  const toast = useToast();
 
-  // State for toggling password visibility for the main password input
   const [showPassword, setShowPassword] = useState(false);
-  // State for toggling password visibility for the confirm password input
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // State for the first name input
   const [firstName, setFirstName] = useState("");
-  // State for the last name input
   const [lastName, setLastName] = useState("");
-  // State for the username input (formerly 'identifier')
-  const [username, setUsername] = useState(""); // Renamed identifier to username
-  // State for the new email input
-  const [email, setEmail] = useState(""); // New state for email
-  // State for the password input
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // State for the confirm password input
   const [confirmPassword, setConfirmPassword] = useState("");
-  // State for loading indicator on button
   const [loading, setLoading] = useState(false);
 
-  /**
-   * handleSignUp function handles the user registration process.
-   * It performs client-side validation and then sends a POST request
-   * to the backend API for user creation.
-   */
   const handleSignUp = async () => {
-    // --- DEBUGGING LOGS ---
     console.log("--- handleSignUp called ---");
     console.log("firstName:", firstName);
     console.log("lastName:", lastName);
     console.log("username:", username);
     console.log("email:", email);
-    console.log("password:", password ? "******" : "EMPTY"); // Mask password for security in logs
-    console.log("confirmPassword:", confirmPassword ? "******" : "EMPTY"); // Mask confirmPassword
+    console.log("password:", password ? "******" : "EMPTY");
+    console.log("confirmPassword:", confirmPassword ? "******" : "EMPTY");
     console.log("-------------------------");
-    // --- END DEBUGGING LOGS ---
 
-    // --- Frontend Validation ---
     if (
       !firstName ||
       !lastName ||
@@ -79,7 +61,6 @@ const UserCreation = () => {
       return;
     }
 
-    // Email format validation for the dedicated email input
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast({
@@ -93,7 +74,6 @@ const UserCreation = () => {
       return;
     }
 
-    // Password length validation
     if (password.length < 8) {
       toast({
         title: "Password Too Short.",
@@ -106,7 +86,6 @@ const UserCreation = () => {
       return;
     }
 
-    // Password strength validation (at least one uppercase, one lowercase, one number, one special character)
     const passwordStrengthRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\-]).{8,}$/;
     if (!passwordStrengthRegex.test(password)) {
@@ -133,39 +112,41 @@ const UserCreation = () => {
       });
       return;
     }
-    // --- End Frontend Validation ---
 
-    setLoading(true); // Set loading state to true while the request is in progress
+    setLoading(true);
 
     try {
-      // Proceed directly with user creation.
-      // The backend's /api/user/usercreate endpoint is expected to handle
-      // the uniqueness check for the username and email.
-      // From UserCreation component
       const response = await axios.post(
         "http://localhost:5000/api/user/usercreate",
         {
-          firstName, // Sends 'firstName'
-          lastName, // Sends 'lastName'
+          firstName,
+          lastName,
           username,
           email,
           password,
         }
       );
 
-      const data = response.data; // Get response data from the server
+      const data = response.data;
 
-      // Display a success toast message
+      // Assuming your backend's /api/user/usercreate now returns a 'token' field
+      // upon successful registration, similar to a login endpoint.
+      if (data.token) {
+        localStorage.setItem("jwt_token", data.token); // Store the JWT in localStorage
+        console.log("JWT Token stored:", data.token);
+      }
+
       toast({
         title: "Registration Successful!",
-        description: data.message || "Your account has been created.",
+        description:
+          data.message ||
+          "Your account has been created and you are now logged in.",
         status: "success",
         duration: 3000,
         isClosable: true,
         position: "top",
       });
 
-      // Clear the form fields after successful registration
       setFirstName("");
       setLastName("");
       setUsername("");
@@ -173,10 +154,9 @@ const UserCreation = () => {
       setPassword("");
       setConfirmPassword("");
 
-      // Redirect the user to the login page after successful registration
-      navigate("/login"); // Use navigate for programmatic redirection within React Router
+      // Instead of navigating to login, navigate to a protected dashboard or home page
+      navigate("/dashboard"); // Or wherever your protected route is
     } catch (error) {
-      // General error handling for the user creation request
       if (error.response) {
         console.error("Registration error response data:", error.response.data);
         console.error("Registration error status:", error.response.status);
@@ -213,7 +193,7 @@ const UserCreation = () => {
         });
       }
     } finally {
-      setLoading(false); // Always set loading state to false after the request completes (success or error)
+      setLoading(false);
     }
   };
 
@@ -259,7 +239,6 @@ const UserCreation = () => {
             onChange={(e) => setLastName(e.target.value)}
           />
 
-          {/* Updated to be Username input */}
           <Input
             placeholder="Username"
             type="text"
@@ -267,20 +246,19 @@ const UserCreation = () => {
             size="lg"
             bg={useColorModeValue("gray.100", "gray.700")}
             _hover={{ bg: useColorModeValue("gray.200", "gray.600") }}
-            value={username} // Bind to username state
-            onChange={(e) => setUsername(e.target.value)} // Update username state
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
 
-          {/* New Email input */}
           <Input
             placeholder="Email Address"
-            type="email" // Use type="email" for better browser validation
+            type="email"
             variant="filled"
             size="lg"
             bg={useColorModeValue("gray.100", "gray.700")}
             _hover={{ bg: useColorModeValue("gray.200", "gray.600") }}
-            value={email} // Bind to email state
-            onChange={(e) => setEmail(e.target.value)} // Update email state
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
 
           <InputGroup>
@@ -298,7 +276,7 @@ const UserCreation = () => {
               <IconButton
                 icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
                 variant="ghost"
-                onClick={() => setShowPassword((show) => !show)} // Controls only 'showPassword'
+                onClick={() => setShowPassword((show) => !show)}
                 aria-label="Toggle password visibility"
               />
             </InputRightElement>
@@ -307,7 +285,7 @@ const UserCreation = () => {
           <InputGroup>
             <Input
               placeholder="Confirm Password"
-              type={showConfirmPassword ? "text" : "password"} // Uses 'showConfirmPassword'
+              type={showConfirmPassword ? "text" : "password"}
               variant="filled"
               size="lg"
               bg={useColorModeValue("gray.100", "gray.700")}
@@ -322,9 +300,9 @@ const UserCreation = () => {
             />
             <InputRightElement h="full">
               <IconButton
-                icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />} // Controls only 'showConfirmPassword'
+                icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
                 variant="ghost"
-                onClick={() => setShowConfirmPassword((show) => !show)} // Toggles 'showConfirmPassword'
+                onClick={() => setShowConfirmPassword((show) => !show)}
                 aria-label="Toggle confirm password visibility"
               />
             </InputRightElement>
@@ -347,8 +325,6 @@ const UserCreation = () => {
           <Text align="center" fontSize="sm">
             Already have an account?{" "}
             <Link to="/login">
-              {" "}
-              {/* Wrapped with Link to navigate to /login */}
               <Text
                 as="span"
                 color="teal.400"
