@@ -27,7 +27,7 @@ app.use(cors(corsOptions));
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
-app.use("/api", noteRoutes); // Prefix all note routes with /api/notes
+app.use("/api/notes", noteRoutes); // Prefix all note routes with /api/notes
 app.use("/api/user", userRoutes);
 app.get("/api/notes", (req, res) => {
   res.send("Welcome to the Notes API!");
