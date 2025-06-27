@@ -38,7 +38,7 @@ import { NoteNavigation } from "../components/NoteNavigation"; // Adjust this pa
 
 // Import the placeholder image for no notes found
 import book from "../assets/img/wmremove-transformed.png"; // Adjust this path if necessary
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+
 // --- FavoriteNoteCard Component ---
 const FavoriteNoteCard = ({
   note,
@@ -154,7 +154,7 @@ const Favorites = () => {
     setError(null);
     try {
       const { data } = await axios.get(
-        `${VITE_API_BACKEND_URL}api/getfavorites`,
+        "http://localhost:5000/api/getfavorites",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
@@ -270,7 +270,7 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       await axios.patch(
-        `${VITE_API_BACKEND_URL}api/favorite/multiple-unfavorite`,
+        "http://localhost:5000/api/favorite/multiple-unfavorite",
         {
           ids: Array.from(selectedNotes),
         },
@@ -321,7 +321,7 @@ const Favorites = () => {
 
     try {
       await axios.put(
-        `${VITE_API_BACKEND_URL}api/favorites/single-unfavorite/${id}`,
+        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,
