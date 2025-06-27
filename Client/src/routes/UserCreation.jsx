@@ -17,6 +17,8 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
 
+const VITE_API_BACKEND_URL =
+  import.meta.env.VITE_API_BACKEND_URL || "http://localhost:5000/api";
 const UserCreation = () => {
   const navigate = useNavigate();
   const toast = useToast();
@@ -117,7 +119,7 @@ const UserCreation = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/user/usercreate",
+        `${VITE_API_BACKEND_URL}/user/usercreate`,
         {
           firstName,
           lastName,

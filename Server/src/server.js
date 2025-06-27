@@ -1,53 +1,93 @@
+// server.js
+
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
-const connectDB = require("./config/Connection");
-/* const path = require("path"); */
+const connectDB = require("./config/Connection"); // Assuming this connects to MongoDB
 const dotenv = require("dotenv");
-dotenv.config(); // Load environment variables from .env file
 
-// Load environment variables
+// Load environment variables from .env file (for local development)
+dotenv.config();
+
+// Initialize the Express application
 const app = express();
-const port = process.env.PORT; // Use PORT from .env or default to 5000
 
-// Middleware
-app.use(express.json());
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-/* app.use(express.static(path.join(__dirname, "public"))); */
-// Sample route
-// Configure CORS to allow requests from your Vercel frontend URL
+// --- Database Connection ---
+// Connect to MongoDB as soon as the server file is loaded.
+// For Vercel serverless functions, this connection will be established
+// when the function is "warmed up" or on the first request.
+connectDB()
+  .then(() => {
+    console.log("MongoDB connected successfully!");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB:", err);
+    // Exit the process if DB connection fails, or handle gracefully
+    process.exit(1);
+  });
+
+// --- CORS Configuration ---
+// Define allowed origins for CORS.
+// This allows your local development server AND your deployed Vercel frontend.
+const allowedOrigins = [
+  "http://localhost:5173", // Your Vite/React local development server
+  "http://localhost:3000", // Common alternative for React local development
+  process.env.CLIENT_URL, // This will be your deployed Vercel frontend URL from environment variables
+];
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL, // Set this in Vercel env variables
-  credentials: true, // If you're sending cookies/auth headers
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `The CORS policy for this site does not allow access from the Origin ${origin}.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
 
+app.use(cors(corsOptions));
+// --- Middleware ---
+// Use express's built-in body parsers instead of body-parser package
+app.use(express.json()); // Parses incoming JSON requests
+app.use(express.urlencoded({ extended: true })); // Parses URL-encoded requests
+
+// --- Routes ---
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
-app.use("/api/notes", noteRoutes); // Prefix all note routes with /api/notes
+
+// Prefix all note routes with /api/notes
+app.use("/api/notes", noteRoutes);
+// Prefix all user routes with /api/user
 app.use("/api/user", userRoutes);
+
+// Root API endpoint for testing
+app.get("/api", (req, res) => {
+  res.send("Welcome to the MERN Stack API!");
+});
+
+// Specific API endpoint for notes (if noteRoutes doesn't handle root)
 app.get("/api/notes", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
 
+// Specific API endpoint for users (if userRoutes doesn't handle root)
 app.get("/api/user", (req, res) => {
-  res.send("welcome to user");
+  res.send("Welcome to the User API!");
 });
 
-/* app.get("/api/user/settings", (req, res) => {
-  res.send("Welcome to the Notes API!");
-}); */
+// --- Server Export (for Vercel Serverless Functions) ---
+// For Vercel, you export the app instance. Vercel's runtime will handle
+// starting the server and listening on the appropriate port.
+module.exports = app;
 
-module.exports = app; // Export the app for testing or further configuration
-connectDB()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Error connecting to MongoDB:", err);
-  });
+// --- Local Server Start (Conditional) ---
+// This part is ONLY for local development. Vercel does NOT use app.listen().
+// It's good practice to wrap it in a condition or separate it for clarity.
+// We're using process.env.NODE_ENV to check if we're not in a Vercel environment.
+
+const port = process.env.PORT || 5000; // Default to 5000 if PORT is not set
+app.listen(port, () => {
+  console.log(`Server is running locally on http://localhost:${port}`);
+});
