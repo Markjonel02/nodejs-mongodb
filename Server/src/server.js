@@ -18,6 +18,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 /* app.use(express.static(path.join(__dirname, "public"))); */
 // Sample route
 // Configure CORS to allow requests from your Vercel frontend URL
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: "https://nodejs-mongodb-a67t.onrender.com/login",
+    credentials: true,
+  })
+);
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
