@@ -18,7 +18,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 /* app.use(express.static(path.join(__dirname, "public"))); */
 // Sample route
 // Configure CORS to allow requests from your Vercel frontend URL
-const cors = require("cors");
 
 app.use(
   cors({
