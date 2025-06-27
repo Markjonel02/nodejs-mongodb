@@ -16,7 +16,6 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
-
 const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
 const UserCreation = () => {
   const navigate = useNavigate();
@@ -134,7 +133,7 @@ const UserCreation = () => {
       // upon successful registration, similar to a login endpoint.
       if (data.token) {
         localStorage.setItem("jwt_token", data.token); // Store the JWT in localStorage
-        /*      console.log("JWT Token stored:", data.token); */
+        /*  console.log("JWT Token stored:", data.token); */
       }
 
       toast({
