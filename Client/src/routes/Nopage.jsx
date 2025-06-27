@@ -52,7 +52,7 @@ export default function NotFoundPage() {
         boxShadow="lg"
         borderRadius="full"
         _hover={{ transform: "translateY(-5px)", boxShadow: "dark-lg" }}
-        transition="all 0.3s ease-in-out"
+
         // framer-motion float-up-down animation
         animate={{ y: [0, -20, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}

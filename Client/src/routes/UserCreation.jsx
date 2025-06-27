@@ -17,8 +17,7 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
 
-const VITE_API_BACKEND_URL =
-  import.meta.env.VITE_API_BACKEND_URL || "http://localhost:5000/api";
+const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
 const UserCreation = () => {
   const navigate = useNavigate();
   const toast = useToast();
@@ -119,7 +118,7 @@ const UserCreation = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/user/usercreate`,
+        `${VITE_API_BACKEND_URL}api/user/usercreate`,
         {
           firstName,
           lastName,
@@ -135,7 +134,7 @@ const UserCreation = () => {
       // upon successful registration, similar to a login endpoint.
       if (data.token) {
         localStorage.setItem("jwt_token", data.token); // Store the JWT in localStorage
-        console.log("JWT Token stored:", data.token);
+        /*      console.log("JWT Token stored:", data.token); */
       }
 
       toast({
