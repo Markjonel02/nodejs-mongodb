@@ -26,7 +26,9 @@ app.use("/api/user", userRoutes);
 app.get("/api/notes", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
-
+app.get("/api", (req, res) => {
+  res.send("Connected to the API!");
+});
 app.get("/api/user", (req, res) => {
   res.send("welcome to user");
 });
