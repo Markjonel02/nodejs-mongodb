@@ -22,7 +22,7 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: "https://nodejs-mongodb-a67t.onrender.com/login",
+    origin: "https://nodejs-mongodb-a67t.onrender.com",
     credentials: true,
   })
 );
