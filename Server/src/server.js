@@ -29,8 +29,6 @@ connectDB()
 // Define allowed origins for CORS.
 // This allows your local development server AND your deployed Vercel frontend.
 const allowedOrigins = [
-  "http://localhost:5173", // Your Vite/React local development server
-  "http://localhost:3000", // Common alternative for React local development
   process.env.CLIENT_URL, // This will be your deployed Vercel frontend URL from environment variables
 ];
 

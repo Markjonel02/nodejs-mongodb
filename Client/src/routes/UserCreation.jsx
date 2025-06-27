@@ -119,7 +119,7 @@ const UserCreation = () => {
 
     try {
       const response = await axios.post(
-        `${VITE_API_BACKEND_URL}/user/usercreate`,
+        `http://localhost:5000/api/user/usercreate`,
         {
           firstName,
           lastName,
