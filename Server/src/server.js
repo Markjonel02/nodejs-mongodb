@@ -19,14 +19,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Sample route
 // Configure CORS to allow requests from your Vercel frontend URL
 
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-  })
-);
-
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
 app.use("/api/notes", noteRoutes); // Prefix all note routes with /api/notes
