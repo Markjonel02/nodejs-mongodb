@@ -22,7 +22,8 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: "https://nodejs-mongodb-a67t.onrender.com/login",
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
 );
