@@ -2,22 +2,39 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const connectDB = require("./config/Connection");
-/* const path = require("path"); */
+const path = require("path");
 const dotenv = require("dotenv");
 dotenv.config(); // Load environment variables from .env file
 
 // Load environment variables
 const app = express();
-const port = process.env.PORT; // Use PORT from .env or default to 5000
+const port = process.env.PORT || 5000; // Use PORT from .env or default to 5000
+// __dirname is a global variable in Node.js, no need to declare it.
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-/* app.use(express.static(path.join(__dirname, "public"))); */
-// Sample route
-// Configure CORS to allow requests from your Vercel frontend URL
+
+if (process.env.NODE_ENV !== "production") {
+  // Serve static files from the React app in development mode
+  app.use(
+    cors({
+      origin: process.env.CORS_ORIGIN,
+    })
+  );
+}
+
+if (process.env.NODE_ENV === "production") {
+  // Serve static files from the React app
+  app.use(express.static(path.join(__dirname, "../../Client/dist")));
+
+  // Handle any requests that don't match the above routes with React's index.html
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../../Client", "dist", "index.html"));
+  });
+}
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
