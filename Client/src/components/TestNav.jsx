@@ -121,7 +121,7 @@ const Sidebar = ({ onNoteAdded }) => {
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
       const response = await axios.post(
-        `${VITE_API_BACKEND_URL}api/notes/notes`,
+        `${VITE_API_BACKEND_URL}/api/notes/notes`,
         {
           // Request body
           title: newNoteTitle,
