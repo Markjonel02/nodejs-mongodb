@@ -39,7 +39,7 @@ import { NoteNavigation } from "../components/NoteNavigation";
 
 // Import the book image
 import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
-
+const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
@@ -175,7 +175,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const { data } = await axios.get(
-        "http://localhost:5000/api/getarchivenotes",
+        `${VITE_API_BACKEND_URL}/api/getarchivenotes`,
         {
           headers: {
             Authorization: `Bearer ${token}`, //  Send token
@@ -273,7 +273,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       await axios.post(
-        "http://localhost:5000/api/archivednotes/delete-multiple",
+        `${VITE_API_BACKEND_URL}/api/archivednotes/delete-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -316,7 +316,7 @@ const Archivednotes = () => {
     setIsDeleting(true);
     try {
       await axios.delete(
-        `http://localhost:5000/api/archivednotes/del-single/${id}`,
+        `${VITE_API_BACKEND_URL}/api/archivednotes/del-single/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
@@ -365,7 +365,7 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const response = await axios.put(
-        "http://localhost:5000/api/arcnotes/restore-multiple",
+        `${VITE_API_BACKEND_URL}/api/arcnotes/restore-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -413,7 +413,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await axios.put(
-        `http://localhost:5000/api/arcnotes/restore/${id}`,
+        `${VITE_API_BACKEND_URL}/api/arcnotes/restore/${id}`,
         {}, // No body payload
         {
           headers: {

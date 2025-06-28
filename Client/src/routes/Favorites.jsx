@@ -30,7 +30,7 @@ import {
   FaExclamationCircle,
   FaRegHeart, // Import FaRegHeart for unfavorite icon
 } from "react-icons/fa";
-
+const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
 // --- Import your custom hooks/components ---
 import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
 import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
@@ -154,7 +154,7 @@ const Favorites = () => {
     setError(null);
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/getfavorites",
+        `${VITE_API_BACKEND_URL}/api/getfavorites`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
@@ -270,7 +270,7 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       await axios.patch(
-        "http://localhost:5000/api/favorite/multiple-unfavorite",
+        `${VITE_API_BACKEND_URL}/api/favorite/multiple-unfavorite`,
         {
           ids: Array.from(selectedNotes),
         },
@@ -321,7 +321,7 @@ const Favorites = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
+        `${VITE_API_BACKEND_URL}/api/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,

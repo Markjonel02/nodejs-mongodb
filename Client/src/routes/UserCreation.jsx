@@ -31,7 +31,7 @@ const UserCreation = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
   const handleSignUp = async () => {
     console.log("--- handleSignUp called ---");
     console.log("firstName:", firstName);
@@ -117,7 +117,7 @@ const UserCreation = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/user/usercreate",
+        `${VITE_API_BACKEND_URL}/api/user/usercreate`,
         {
           firstName,
           lastName,
