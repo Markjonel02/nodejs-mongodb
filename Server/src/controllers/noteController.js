@@ -1,8 +1,9 @@
 const Addnote = require("../models/Addnote");
 const Trashnotes = require("../models/Trash");
 const Archived = require("../models/Archived");
-const Trash = require("../models/Trash");
+const Trash = require("../models/Trash"); // Redundant import if Trashnotes is the same, but harmless
 const mongoose = require("mongoose");
+
 // Create a new note
 exports.createNote = async (req, res) => {
   console.log("Request received for createNote.");
@@ -56,9 +57,9 @@ exports.getNotes = async (req, res) => {
   try {
     const userId = req.user.id; // Get the authenticated user's ID from req.user
     if (!userId) {
-      return;
+      // FIX: Reordered to ensure response is sent before exiting
       console.warn("Attempt to fetch notes without authenticated user ID.");
-      res
+      return res // Use return here to stop execution after sending response
         .status(401)
         .json({ message: "Unauthorized: User ID not found. Please log in." });
     }
@@ -73,6 +74,7 @@ exports.getNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.updateNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,7 +110,6 @@ exports.updateNotes = async (req, res) => {
 };
 
 // Delete a note and move it to the Trash collection
-
 exports.delNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -138,8 +139,6 @@ exports.delNotes = async (req, res) => {
       _id: noteToDelete._id, // Keep the same _id for easier restoration later if needed
       userId: userId, // Explicitly set the userId for the trash entry
       deletedAt: new Date(), // Add a timestamp for when it was moved to trash
-
-      //
     });
 
     // 3. Delete the original note from the main collection.
@@ -211,6 +210,7 @@ exports.delPermanently = async (req, res) => {
   }
 };
 
+// This controller seems to be a duplicate of delPermanently, consider removing one.
 exports.delPermanentSingle = async (req, res) => {
   try {
     const { id } = req.params; // ID of the note to permanently delete
@@ -239,6 +239,7 @@ exports.delPermanentSingle = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
+
 exports.delPermanentMultiple = async (req, res) => {
   try {
     const { ids } = req.body; // Array of note IDs to permanently delete
@@ -296,12 +297,13 @@ exports.restoreSingleNotetrash = async (req, res) => {
     }
 
     // Recreate in Addnote
-    const { _id, ...rest } = trashNote;
+    const { _id, ...rest } = trashNote; // Destructure _id to let Mongoose create a new one
     const newNote = new Addnote({
       ...rest,
       isArchived: false,
       ArchivedAt: null,
       updatedAt: new Date(),
+      // Keep original createdAt for historical accuracy, if desired
       createdAt: trashNote.createdAt,
     });
     const restoredNote = await newNote.save();
@@ -357,7 +359,7 @@ exports.restoreMultipleTrash = async (req, res) => {
       isArchived: false,
       ArchivedAt: null,
       updatedAt: new Date(),
-      createdAt: note.createdAt,
+      createdAt: note.createdAt, // Keep original createdAt
     }));
 
     // 4. Insert into Addnote collection
@@ -365,7 +367,7 @@ exports.restoreMultipleTrash = async (req, res) => {
 
     // 5. Delete from Trash only the matched notes
     await Trash.deleteMany({
-      _id: { $in: noteTrash.map((n) => n._id.toString()) },
+      _id: { $in: noteTrash.map((n) => n._id) }, // Use actual ObjectId for deletion
       userId: userId,
     });
 
@@ -386,10 +388,7 @@ exports.restoreMultipleTrash = async (req, res) => {
   }
 };
 
-//getting deleted notes from trash
-
-//Archived  controller section
-
+//Archived controller section
 exports.archivedNotes = async (req, res) => {
   try {
     const { id } = req.params;
@@ -407,14 +406,19 @@ exports.archivedNotes = async (req, res) => {
         .json({ message: "Note could not be found or you don't have access." });
     }
 
+    // Create a new document in the Archived collection
+    // Ensure _id is not copied if you want a new _id for the archived copy
+    // If you want to keep the same _id, ensure your Archived schema allows it
     const archivedNoteData = {
       ...noteToArchive,
+      _id: noteToArchive._id, // Keep the same _id for easier management
       isArchived: true,
       ArchivedAt: new Date(),
     };
 
     await Archived.create(archivedNoteData);
 
+    // Delete the original note from the main collection
     await Addnote.deleteOne({ _id: id, userId });
 
     return res.status(200).json({ message: "Successfully moved to Archived!" });
@@ -443,6 +447,7 @@ exports.getArchivedNotes = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 //delete single Archived notes in archivedNotes
 exports.delArchivedNoteSingle = async (req, res) => {
   try {
@@ -460,9 +465,11 @@ exports.delArchivedNoteSingle = async (req, res) => {
       return res.status(404).json({ message: "Note not found in archive." });
     }
 
+    // Move to Trash
     const trashNote = await Trash.create({
       ...archivedNote,
-      DeletedAt: new Date(),
+      _id: archivedNote._id, // Keep original _id for consistency
+      deletedAt: new Date(), // Use 'deletedAt' for consistency with Trash schema
     });
 
     await Archived.deleteOne({ _id: id, userId });
@@ -494,19 +501,23 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
     let failedCount = 0;
     const failedIds = [];
 
+    // Using a loop for individual processing to handle partial success and detailed logging
     for (const id of ids) {
       try {
         const archivedNote = await Archived.findOne({ _id: id, userId }).lean();
         if (archivedNote) {
           await Trash.create({
             ...archivedNote,
-            deletedAt: new Date(),
+            _id: archivedNote._id, // Keep original _id for consistency
+            deletedAt: new Date(), // Use 'deletedAt' for consistency
           });
 
           await Archived.deleteOne({ _id: id, userId });
           movedCount++;
         } else {
           console.warn(`Note with ID ${id} not found or unauthorized.`);
+          failedCount++;
+          failedIds.push(id);
         }
       } catch (innerError) {
         console.error(`Error processing note ID ${id}:`, innerError);
@@ -529,30 +540,35 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
   }
 };
 
-//restore multiple
+//restore multiple (from Archived to Addnote)
 exports.restoreMultipleNotes = async (req, res) => {
   try {
     const { ids } = req.body;
+    const userId = req.user.id; // Ensure userId is used for security
 
-    // 1. Input Validation: Ensure 'ids' is a valid array
+    // 1. Input Validation: Ensure 'ids' is a valid array and userId is present
     if (
       !Array.isArray(ids) ||
       ids.length === 0 ||
-      !ids.every((id) => typeof id === "string")
+      !ids.every((id) => typeof id === "string") ||
+      !userId // Add userId validation here
     ) {
       return res.status(400).json({
         message:
-          "Invalid request: 'ids' must be a non-empty array of note IDs.",
+          "Invalid request: 'ids' must be a non-empty array of note IDs and user ID is required.",
       });
     }
 
     // 2. Find and Prepare Notes for Restoration:
-    //    Fetch notes from Archived collection and prepare them for Addnote collection.
-    const notesToRestore = await Archived.find({ _id: { $in: ids } }).lean(); // .lean() for plain JS objects
+    // Fetch notes from Archived collection that belong to the user
+    const notesToRestore = await Archived.find({
+      _id: { $in: ids },
+      userId: userId, // Filter by userId for security
+    }).lean(); // .lean() for plain JS objects
 
     if (notesToRestore.length === 0) {
       return res.status(404).json({
-        message: "No archived notes found with the provided IDs.",
+        message: "No archived notes found with the provided IDs for this user.",
       });
     }
 
@@ -563,15 +579,19 @@ exports.restoreMultipleNotes = async (req, res) => {
       ArchivedAt: null,
       updatedAt: new Date(),
       createdAt: note.createdAt,
+      userId: userId, // Explicitly set userId for the new note
     }));
 
     // 3. Move Notes to Addnote Collection:
-    //    Insert all prepared notes into the Addnote collection.
+    // Insert all prepared notes into the Addnote collection.
     await Addnote.insertMany(restoredNotesData);
 
     // 4. Delete Notes from Archived Collection:
-    //    Remove the notes from the Archived collection.
-    await Archived.deleteMany({ _id: { $in: ids } });
+    // Remove the notes from the Archived collection, ensuring they belong to the user.
+    await Archived.deleteMany({
+      _id: { $in: notesToRestore.map((n) => n._id) }, // Use actual ObjectIds
+      userId: userId, // Filter by userId for security
+    });
 
     // 5. Success Response:
     return res.status(200).json({
@@ -590,7 +610,8 @@ exports.restoreMultipleNotes = async (req, res) => {
     });
   }
 };
-//restore single notes
+
+//restore single notes (from Archived to Addnote)
 exports.restoreSingleNote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -611,19 +632,15 @@ exports.restoreSingleNote = async (req, res) => {
       return res.status(404).json({ message: "Archived note not found." });
     }
 
-    // --- FIX IS HERE: Add userId to the Addnote.create object ---
+    // Create a new note in Addnote collection
     const restoredNote = await Addnote.create({
       title: archivedNote.title,
       notes: archivedNote.notes,
       color: archivedNote.color,
       isFavorite: archivedNote.isFavorite || false,
       createdAt: archivedNote.createdAt,
-      userId: userId, // <--- ADD THIS LINE
+      userId: userId, // Explicitly set the userId
     });
-
-    // Optionally, if your Addnote schema has a updatedAt field and it's set to auto-update
-    // you might want to consider if createdAt should be specifically carried over or if the new
-    // note should get a fresh createdAt timestamp. For restoration, carrying it over might be desired.
 
     await Archived.deleteOne({ _id: id, userId });
 
@@ -693,6 +710,7 @@ exports.createFavorite = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 exports.getFavoriteNotes = async (req, res) => {
   try {
     console.log("Fetching favorite notes...");
@@ -737,8 +755,8 @@ exports.unfavoriteSingle = async (req, res) => {
       `[INFO] Request received to unfavorite note ID: ${id} by user: ${userId}`
     );
 
-    // Validate ID format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    // Validate ID format (using mongoose.Types.ObjectId.isValid is generally preferred)
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       console.log(`[ERROR] Invalid ID format: ${id}`);
       return res.status(400).json({ message: "Invalid note ID format." });
     }
@@ -757,7 +775,7 @@ exports.unfavoriteSingle = async (req, res) => {
         .json({ message: "Note not found or unauthorized." });
     }
 
-    // Fetch remaining favorite notes
+    // Fetch remaining favorite notes (consider if this is always needed or if just the updated note is enough)
     const favoriteNotes = await Addnote.find({
       userId,
       isFavorite: true,
