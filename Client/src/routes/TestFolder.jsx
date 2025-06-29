@@ -49,7 +49,8 @@ import { colors } from "../utils/colors";
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL || 5000;
+const VITE_API_BACKEND_URL =
+  import.meta.env.VITE_API_BACKEND_URL ||  `http://localhost:5000`;
 // Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
 // to force a refetch (e.g., after creating a new note).
 const Folders = ({ shouldRefetchNotes }) => {

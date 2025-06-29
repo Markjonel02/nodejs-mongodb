@@ -31,7 +31,8 @@ const UserCreation = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+  const VITE_API_BACKEND_URL =
+    import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
   const handleSignUp = async () => {
     console.log("--- handleSignUp called ---");
     console.log("firstName:", firstName);

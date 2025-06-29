@@ -35,7 +35,8 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 // Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
 // routes are used in the parent App.js (or similar) where <Routes> are defined.
 // The sidebar itself only needs the string path.
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+const VITE_API_BACKEND_URL =
+  import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
 const sidebarLinks = [
   { label: "Dashboard", icon: CiHome, path: "/" },
   { label: "Calendar", icon: CiCalendar, path: "/calendar" },

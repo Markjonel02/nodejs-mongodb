@@ -30,7 +30,8 @@ import {
   FaExclamationCircle,
   FaRegHeart, // Import FaRegHeart for unfavorite icon
 } from "react-icons/fa";
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+const VITE_API_BACKEND_URL =
+  import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
 // --- Import your custom hooks/components ---
 import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
 import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
