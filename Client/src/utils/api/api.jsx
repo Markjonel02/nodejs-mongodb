@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const VITE_API_BACKEND_URL =
-  "https://nodejs-mongodb-79vz.onrender.com" || "http://localhost:5000";
+  "https://nodejs-mongodb-server-yscc.onrender.com" || "http://localhost:5000";
 
 // Export the configured Axios instance
 export const api = axios.create({
