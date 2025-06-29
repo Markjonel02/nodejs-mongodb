@@ -12,7 +12,7 @@ const port = process.env.PORT || 5000; // Use PORT from .env or default to 5000
 
 // Configure CORS to allow requests from your Vercel frontend URL
 const corsOptions = {
-  origin: process.env.CLIENT_URL, // Use CLIENT_URL from .env
+  origin: "https://nodejs-mongodb-bkpu.onrender.com", // Use CLIENT_URL from .env
   credentials: true, // Allow cookies/auth headers
   optionsSuccessStatus: 200,
 };
