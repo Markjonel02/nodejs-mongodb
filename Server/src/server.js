@@ -27,9 +27,9 @@ app.use(cors(corsOptions));
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
-app.use("/api", noteRoutes); // Prefix all note routes with /api/notes
+app.use("/api/notes", noteRoutes); // Prefix all note routes with /api/notes
 app.use("/api/user", userRoutes);
-app.get("/api", (req, res) => {
+app.get("/api/notes", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
 
@@ -37,9 +37,9 @@ app.get("/api/user", (req, res) => {
   res.send("welcome to user");
 });
 
-/* app.get("/api/user/settings", (req, res) => {
-  res.send("Welcome to the Notes API!");
-}); */
+app.get("/api", (req, res) => {
+  res.send("connected to api");
+});
 
 module.exports = app; // Export the app for testing or further configuration
 connectDB()

@@ -174,7 +174,7 @@ const Archivednotes = () => {
     setError(null); // Clear previous errors
     try {
       const token = localStorage.getItem("jwtToken");
-      const { data } = await axios.get(`${api}/api/getarchivenotes`, {
+      const { data } = await axios.get(`${api}/api/notes/getarchivenotes`, {
         headers: {
           Authorization: `Bearer ${token}`, //  Send token
         },
@@ -270,7 +270,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       await axios.post(
-        `${api}/api/archivednotes/delete-multiple`,
+        `${api}/api/notes/archivednotes/delete-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -312,7 +312,7 @@ const Archivednotes = () => {
     onSingleDeleteClose(); // Close the dialog immediately
     setIsDeleting(true);
     try {
-      await axios.delete(`${api}/api/archivednotes/del-single/${id}`, {
+      await axios.delete(`${api}/api/notes/archivednotes/del-single/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },
@@ -359,7 +359,7 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const response = await axios.put(
-        `${api}/api/arcnotes/restore-multiple`,
+        `${api}/api/notes/arcnotes/restore-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -407,7 +407,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await axios.put(
-        `${api}/api/arcnotes/restore/${id}`,
+        `${api}/api/notes/arcnotes/restore/${id}`,
         {}, // No body payload
         {
           headers: {

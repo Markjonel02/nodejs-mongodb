@@ -125,7 +125,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get(`${api}/api/getnotes`, {
+      const response = await axios.get(`${api}/api/notes/getnotes`, {
         headers: {
           Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
         },
@@ -245,7 +245,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `${api}/api/delnotes/${noteToDelete}`,
+        `${api}/api/notes/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -296,7 +296,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `${api}/api/archivednotes/${noteToArchive}`,
+        `${api}/api/notes/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -343,7 +343,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `${api}/api/favorites/${noteId}`,
+        `${api}/api/notes/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -416,7 +416,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `${api}/api/updatenotes/${noteToUpdate._id}`,
+        `${api}/api/notes/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
