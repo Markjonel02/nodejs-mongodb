@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
-
+import api from "../utils/api/api";
 const UserCreation = () => {
   const navigate = useNavigate();
   const toast = useToast();
@@ -31,8 +31,7 @@ const UserCreation = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const VITE_API_BACKEND_URL =
-    import.meta.env.VITE_API_BACKEND_URL;
+
   const handleSignUp = async () => {
     console.log("--- handleSignUp called ---");
     console.log("firstName:", firstName);
@@ -117,16 +116,13 @@ const UserCreation = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${VITE_API_BACKEND_URL}/api/user/usercreate`,
-        {
-          firstName,
-          lastName,
-          username,
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${api}/api/user/usercreate`, {
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
 
       const data = response.data;
 
@@ -134,7 +130,7 @@ const UserCreation = () => {
       // upon successful registration, similar to a login endpoint.
       if (data.token) {
         localStorage.setItem("jwt_token", data.token); // Store the JWT in localStorage
-        /*  console.log("JWT Token stored:", data.token); */
+        console.log("JWT Token stored:", data.token);
       }
 
       toast({

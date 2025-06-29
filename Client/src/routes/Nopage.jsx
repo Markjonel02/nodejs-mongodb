@@ -16,7 +16,7 @@ export default function NotFoundPage() {
       alignItems="center"
       justifyContent="center"
       flexDirection="column"
-      background="linear-gradient(to bottom right, #8A2BE2, #FF69B4)" // Using CSS gradient for better performance than Chakra's prop
+      // Using CSS gradient for better performance than Chakra's prop
       color="#fff"
       textAlign="center"
       overflow="hidden"
