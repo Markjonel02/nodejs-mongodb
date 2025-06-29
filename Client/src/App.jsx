@@ -1,11 +1,10 @@
-// App.js
 import { Box } from "@chakra-ui/react";
-import Dashboard from "./components/Dashboard"; // Keep Dashboard import
+import Dashboard from "./components/Dashboard";
 import TopNavigation from "./components/TopNavigation";
 import MainContainer from "./components/MainContainer";
 import Login from "./components/UserLogin";
 import { useState, useEffect } from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom"; // Import Outlet
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import UserCreation from "./routes/UserCreation";
 
 function App() {
@@ -21,6 +20,8 @@ function App() {
   const handleLoginSuccess = (user) => {
     setLogedin(true);
     setLoggedInUser(user);
+    // CRITICAL: Ensure UserLogin component navigates to "/"
+    // navigate("/"); // This should be in UserLogin.js
   };
 
   const handleLogout = () => {
@@ -53,6 +54,7 @@ function App() {
       )}
 
       <Routes>
+        {/* Public Routes */}
         <Route
           path="/login"
           element={<Login onLoginSuccess={handleLoginSuccess} />}
@@ -60,47 +62,39 @@ function App() {
         <Route path="/signup" element={<UserCreation />} />
 
         {/* Protected Dashboard Layout Route */}
+        {/* This route acts as a wrapper for all protected routes */}
         <Route
-          path="/"
+          path="/" // Base path for protected content
           element={
             isLogedin ? (
               <MainContainer>
-                {/* Outlet renders the matched child route */}
                 <Outlet />
               </MainContainer>
             ) : (
+              // If not logged in, redirect to login page
               <Navigate to="/login" replace />
             )
           }
         >
           {/* Nested Routes for Dashboard content */}
-          <Route index element={<Dashboard />} />{" "}
-          {/* Renders Dashboard at /dashboard */}
-          <Route path="archive" element={<Dashboard type="archive" />} />{" "}
-          {/* Pass type to Dashboard */}
+          {/* The 'index' route matches the parent path ("/") exactly.
+              By rendering <Dashboard /> without a 'type' prop, it triggers
+              the default case in Dashboard.js, which renders <TestFolder />. */}
+          <Route index element={<Dashboard />} />
+
+          {/* Specific routes for other Dashboard types */}
+          <Route path="archive" element={<Dashboard type="archive" />} />
           <Route path="trash" element={<Dashboard type="trash" />} />
           <Route path="favorites" element={<Dashboard type="favorites" />} />
           <Route path="settings" element={<Dashboard type="settings" />} />
-          <Route path="*" element={<Dashboard type="notFound" />} />
         </Route>
 
-        {/* Redirect from root to /dashboard if logged in, otherwise to /login */}
-        <Route
-          path="/"
-          element={
-            isLogedin ? (
-              <Navigate to="/" replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        {/* Fallback for any unmatched routes outside of login/signup/dashboard */}
+        {/* Fallback for any unmatched routes outside of the defined ones.
+            This ensures that if a user types a random URL, they are redirected
+            to the appropriate logged-in or logged-out home. */}
         <Route
           path="*"
-          element={
-            <Navigate to={isLogedin ? "/dashboard" : "/login"} replace />
-          }
+          element={<Navigate to={isLogedin ? "/" : "/login"} replace />}
         />
       </Routes>
     </Box>
