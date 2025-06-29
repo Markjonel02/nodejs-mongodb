@@ -30,7 +30,7 @@ import {
   Textarea,
   HStack,
   Circle,
-  Flex,
+  // Flex, // Removed Flex as it was only used for the logout button
   Skeleton,
   SkeletonText,
   useBreakpointValue,
@@ -90,6 +90,8 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [updatedNotes, setUpdatedNotes] = useState("");
   const [updatedColor, setUpdatedColor] = useState("");
 
+  // Removed: Logout Confirmation Modal disclosure and ref
+
   const displayToast = (title, description, status) => {
     toast({
       title,
@@ -123,7 +125,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get("http://localhost:5000/api/notes/getnotes", {
+      const response = await axios.get("http://localhost:5000/api/getnotes", {
         headers: {
           Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
         },
@@ -243,7 +245,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `http://localhost:5000/api/notes/delnotes/${noteToDelete}`,
+        `http://localhost:5000/api/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -294,7 +296,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `http://localhost:5000/api/notes/archivednotes/${noteToArchive}`,
+        `http://localhost:5000/api/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -341,7 +343,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/notes/favorites/${noteId}`,
+        `http://localhost:5000/api/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -414,7 +416,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/notes/updatenotes/${noteToUpdate._id}`,
+        `http://localhost:5000/api/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
@@ -457,6 +459,8 @@ const Folders = ({ shouldRefetchNotes }) => {
       setUpdatedColor("");
     }
   };
+
+  // Removed: handleLogout and confirmLogout functions
 
   const filteredAndSortedNotes = useMemo(() => {
     let currentNotes = [...notes];
@@ -693,6 +697,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
       </Heading>
+      {/* Removed: Logout Button */}
       <ButtonGroup mb={2} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
@@ -838,6 +843,7 @@ const Folders = ({ shouldRefetchNotes }) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {/* Removed: Logout Confirmation AlertDialog */}
     </Box>
   );
 };

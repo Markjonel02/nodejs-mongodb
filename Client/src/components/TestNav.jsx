@@ -38,7 +38,6 @@ import { Link as RouterLink, useLocation } from "react-router-dom";
 
 const sidebarLinks = [
   { label: "Dashboard", icon: CiHome, path: "/" },
-  { label: "Calendar", icon: CiCalendar, path: "/calendar" },
   { label: "Archive", icon: CiFileOn, path: "/archive" },
   { label: "Trash", icon: CiTrash, path: "/trash" },
   { label: "Favorites", icon: CiHeart, path: "/favorites" },
@@ -121,7 +120,7 @@ const Sidebar = ({ onNoteAdded }) => {
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
       const response = await axios.post(
-        "http://localhost:5000/api/notes/notes",
+        "http://localhost:5000/api/notes",
         {
           // Request body
           title: newNoteTitle,
