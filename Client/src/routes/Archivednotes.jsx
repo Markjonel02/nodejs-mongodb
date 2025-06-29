@@ -40,7 +40,7 @@ import { NoteNavigation } from "../components/NoteNavigation";
 // Import the book image
 import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
 const VITE_API_BACKEND_URL =
-  import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
+  import.meta.env.VITE_API_BACKEND_URL;
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,

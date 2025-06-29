@@ -17,7 +17,7 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
 const VITE_API_BACKEND_URL =
-  import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
+  import.meta.env.VITE_API_BACKEND_URL;
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();

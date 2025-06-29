@@ -39,8 +39,7 @@ import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
 import book from "../assets/img/wmremove-transformed.png";
-const VITE_API_BACKEND_URL =
-  import.meta.env.VITE_API_BACKEND_URL || `http://localhost:5000`;
+const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_UR;
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
