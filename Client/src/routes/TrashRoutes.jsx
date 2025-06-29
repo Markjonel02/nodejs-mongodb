@@ -39,7 +39,7 @@ import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
 import book from "../assets/img/wmremove-transformed.png";
-
+import { api } from "../utils/api/api";
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
@@ -194,7 +194,7 @@ const Trashnotes = () => {
 
       setIsUserLoggedIn(true); // User is logged in, set state to true
       const { data } = await axios.get(
-        "http://localhost:5000/api/trashview", // API endpoint for trash
+        `${api}/api/trashview`, // API endpoint for trash
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -353,7 +353,7 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await axios.delete("http://localhost:5000/api/delpermanentmutiple", {
+      await axios.delete(`${api}/api/delpermanentmutiple`, {
         data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
         headers: {
           "Content-Type": "application/json",
@@ -405,7 +405,7 @@ const Trashnotes = () => {
         return;
       }
       await axios.delete(
-        `http://localhost:5000/api/trashdelete/${id}`, // API endpoint for single permanent deletion
+        `${api}/api/trashdelete/${id}`, // API endpoint for single permanent deletion
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -463,7 +463,7 @@ const Trashnotes = () => {
         return;
       }
       const response = await axios.put(
-        "http://localhost:5000/api/restore-multiple-trash", // API endpoint to restore from trash to main notes
+        `${api}/api/restore-multiple-trash`, // API endpoint to restore from trash to main notes
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -516,7 +516,7 @@ const Trashnotes = () => {
         return;
       }
       const response = await axios.post(
-        `http://localhost:5000/api/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+        `${api}/api/restore-single-trash/${id}`, // API endpoint to restore single note from trash
         {}, // Empty body for POST request if only ID is in URL
         {
           headers: {

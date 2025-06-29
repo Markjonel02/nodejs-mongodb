@@ -35,7 +35,7 @@ import {
   SkeletonText,
   useBreakpointValue,
 } from "@chakra-ui/react";
-
+import { api } from "../utils/api/api";
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
@@ -125,7 +125,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get("http://localhost:5000/api/getnotes", {
+      const response = await axios.get(`${api}/api/getnotes`, {
         headers: {
           Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
         },
@@ -245,7 +245,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `http://localhost:5000/api/delnotes/${noteToDelete}`,
+        `${api}/api/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -296,7 +296,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `http://localhost:5000/api/archivednotes/${noteToArchive}`,
+        `${api}/api/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -343,7 +343,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/favorites/${noteId}`,
+        `${api}/api/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -416,7 +416,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/updatenotes/${noteToUpdate._id}`,
+        `${api}/api/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,

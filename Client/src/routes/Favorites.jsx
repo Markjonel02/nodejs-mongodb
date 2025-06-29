@@ -30,7 +30,7 @@ import {
   FaExclamationCircle,
   FaRegHeart, // Import FaRegHeart for unfavorite icon
 } from "react-icons/fa";
-
+import { api } from "../utils/api/api";
 // --- Import your custom hooks/components ---
 import { usePagination } from "../customhooks/usePagination"; // Adjust this path if necessary
 import { PaginationControls } from "../components/PaginationControls"; // Adjust this path if necessary
@@ -153,14 +153,11 @@ const Favorites = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(
-        "http://localhost:5000/api/getfavorites",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-          },
-        }
-      );
+      const { data } = await axios.get(`${api}/api/getfavorites`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+        },
+      });
       setFavoriteNotes(data);
     } catch (err) {
       console.error("Error fetching favorite notes:", err);
@@ -270,7 +267,7 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       await axios.patch(
-        "http://localhost:5000/api/favorite/multiple-unfavorite",
+        `${api}/api/favorite/multiple-unfavorite`,
         {
           ids: Array.from(selectedNotes),
         },
@@ -321,7 +318,7 @@ const Favorites = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
+        `${api}/api/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,

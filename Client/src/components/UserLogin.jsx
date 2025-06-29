@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+import { api } from "../utils/api/api";
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ const UserLogin = ({ onLoginSuccess }) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/user/userlogin`, // Your backend login route
+        `${api}/api/user/userlogin`, // Your backend login route
         {
           identifier, // Send the identifier (username or email)
           password,
