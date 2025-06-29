@@ -116,7 +116,7 @@ const UserCreation = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${api}/api/user/usercreate`, {
+      const response = await api.post(`/api/user/usercreate`, {
         firstName,
         lastName,
         username,

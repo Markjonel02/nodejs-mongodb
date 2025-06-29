@@ -15,8 +15,8 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-import axios from "axios";
-import { api } from "../utils/api/api";
+// import axios from "axios"; // You don't need the default axios import if you use your 'api' instance
+import { api } from "../utils/api/api"; // This imports your configured Axios instance
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -43,20 +43,11 @@ const UserLogin = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${api}/api/user/userlogin`, // Your backend login route
-        {
-          identifier, // Send the identifier (username or email)
-          password,
-        }
-        // IMPORTANT: REMOVE THE AUTHORIZATION HEADER FOR LOGIN REQUEST
-        // You don't send a token when you're trying to *get* a token.
-        // {
-        //   headers: {
-        //     Authorization: `Bearer ${localStorage.getItem("jwtToken")}`, // Incorrect for login
-        //   },
-        // }
-      );
+      // FIX: Use the 'api' instance directly and provide the relative path
+      const response = await api.post("/api/user/userlogin", {
+        identifier, // Send the identifier (username or email)
+        password,
+      });
 
       const data = response.data;
 
@@ -65,6 +56,9 @@ const UserLogin = ({ onLoginSuccess }) => {
       if (data.token) {
         localStorage.setItem("jwtToken", data.token);
         console.log("JWT Token stored:", data.token); // For debugging
+      } else {
+        // Handle case where token is not in response (important for debugging)
+        console.warn("No JWT token received from login response.");
       }
 
       // 2. Store the user object in localStorage (as a string, if it exists)
@@ -73,9 +67,6 @@ const UserLogin = ({ onLoginSuccess }) => {
         localStorage.setItem("loggedInUser", JSON.stringify(data.user));
         console.log("Logged In User stored:", data.user); // For debugging
       }
-
-      // Optional: If you want a boolean flag, though `jwtToken` existence is usually enough.
-      // localStorage.setItem("isLoggedIn", "true");
 
       toast({
         title: "Login Successful!",

@@ -25,7 +25,7 @@ import {
   SkeletonText,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import axios from "axios";
+// REMOVE THIS LINE: import axios from "axios"; // No longer needed if you consistently use your 'api' instance
 import {
   FaTrashAlt,
   FaHeart,
@@ -39,7 +39,8 @@ import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
 import book from "../assets/img/wmremove-transformed.png";
-import { api } from "../utils/api/api";
+import { api } from "../utils/api/api"; // Keep this import!
+
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
@@ -165,6 +166,24 @@ const Trashnotes = () => {
     onClose: onSingleRestoreClose,
   } = useDisclosure();
 
+  // Helper for displaying toasts
+  const displayToast = useCallback(
+    (title, description, status) => {
+      toast({
+        title,
+        description,
+        status,
+        position: "top",
+        duration: 5000,
+        isClosable: true,
+        icon:
+          status === "success" ? <FaCheckCircle /> : <FaExclamationCircle />,
+        variant: status === "error" ? "subtle" : "solid",
+      });
+    },
+    [toast]
+  );
+
   // --- Data Fetching ---
   const fetchTrashedNotes = async () => {
     setLoading(true);
@@ -193,8 +212,9 @@ const Trashnotes = () => {
       }
 
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const { data } = await axios.get(
-        `${api}/api/notes/trashview`, // API endpoint for trash
+      const { data } = await api.get(
+        // Corrected: Use 'api' instance directly
+        "/api/notes/trashview", // Corrected: Relative path only
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -353,7 +373,8 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await axios.delete(`${api}/api/notes/delpermanentmutiple`, {
+      await api.delete("/api/notes/delpermanentmutiple", {
+        // Corrected
         data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
         headers: {
           "Content-Type": "application/json",
@@ -404,8 +425,9 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await axios.delete(
-        `${api}/api/notes/trashdelete/${id}`, // API endpoint for single permanent deletion
+      await api.delete(
+        // Corrected
+        `/api/notes/trashdelete/${id}`, // Corrected: Relative path only
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -462,8 +484,9 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
-      const response = await axios.put(
-        `${api}/api/notes/restore-multiple-trash`, // API endpoint to restore from trash to main notes
+      const response = await api.put(
+        // Corrected
+        "/api/notes/restore-multiple-trash", // Corrected: Relative path only
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -515,8 +538,9 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
-      const response = await axios.post(
-        `${api}/api/notes/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+      const response = await api.post(
+        // Corrected
+        `/api/notes/restore-single-trash/${id}`, // Corrected: Relative path only
         {}, // Empty body for POST request if only ID is in URL
         {
           headers: {

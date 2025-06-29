@@ -49,6 +49,7 @@ import { colors } from "../utils/colors";
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
+import { applyTimestamps } from "../../../Server/src/models/Trash";
 
 // Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
 // to force a refetch (e.g., after creating a new note).
@@ -125,7 +126,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get(`${api}/api/notes/getnotes`, {
+      const response = await api.get(`/api/notes/getnotes`, {
         headers: {
           Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
         },
@@ -244,14 +245,11 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await axios.delete(
-        `${api}/api/notes/delnotes/${noteToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.delete(`/api/notes/delnotes/${noteToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -295,8 +293,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await axios.delete(
-        `${api}/api/notes/archivednotes/${noteToArchive}`,
+      const response = await api.delete(
+        `/api/notes/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -342,8 +340,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await axios.put(
-        `${api}/api/notes/favorites/${noteId}`,
+      const response = await api.put(
+        `/api/notes/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -415,8 +413,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await axios.put(
-        `${api}/api/notes/updatenotes/${noteToUpdate._id}`,
+      const response = await api.put(
+        `/api/notes/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
