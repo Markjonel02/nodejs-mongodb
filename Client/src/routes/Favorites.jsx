@@ -153,7 +153,7 @@ const Favorites = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(`${api}/api/getfavorites`, {
+      const { data } = await axios.get(`${api}/api/notes/getfavorites`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },
@@ -267,7 +267,7 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       await axios.patch(
-        `${api}/api/favorite/multiple-unfavorite`,
+        `${api}/api/notes/favorite/multiple-unfavorite`,
         {
           ids: Array.from(selectedNotes),
         },
@@ -318,7 +318,7 @@ const Favorites = () => {
 
     try {
       await axios.put(
-        `${api}/api/favorites/single-unfavorite/${id}`,
+        `${api}/api/notes/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,
