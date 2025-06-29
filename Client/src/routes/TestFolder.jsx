@@ -49,7 +49,7 @@ import { colors } from "../utils/colors";
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
-const VITE_API_BACKEND_URL = import.meta.env.VITE_API_BACKEND_URL;
+
 // Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
 // to force a refetch (e.g., after creating a new note).
 const Folders = ({ shouldRefetchNotes }) => {
@@ -123,14 +123,11 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get(
-        `${VITE_API_BACKEND_URL}/api/notes/getnotes`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
-          },
-        }
-      );
+      const response = await axios.get("http://localhost:5000/api/notes/getnotes", {
+        headers: {
+          Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
+        },
+      });
       setNotes(response.data);
     } catch (err) {
       console.error("Error fetching notes:", err);
@@ -246,7 +243,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `${VITE_API_BACKEND_URL}/api/notes/delnotes/${noteToDelete}`,
+        `http://localhost:5000/api/notes/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -297,7 +294,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `${VITE_API_BACKEND_URL}/api/notes/archivednotes/${noteToArchive}`,
+        `http://localhost:5000/api/notes/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -344,7 +341,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `${VITE_API_BACKEND_URL}/api/notes/favorites/${noteId}`,
+        `http://localhost:5000/api/notes/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {

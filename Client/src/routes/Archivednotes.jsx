@@ -39,8 +39,7 @@ import { NoteNavigation } from "../components/NoteNavigation";
 
 // Import the book image
 import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
-const VITE_API_BACKEND_URL =
-  import.meta.env.VITE_API_BACKEND_URL;
+
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
@@ -176,7 +175,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const { data } = await axios.get(
-        `${VITE_API_BACKEND_URL}/api/getarchivenotes`,
+        "http://localhost:5000/api/getarchivenotes",
         {
           headers: {
             Authorization: `Bearer ${token}`, //  Send token
@@ -274,7 +273,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       await axios.post(
-        `${VITE_API_BACKEND_URL}/api/archivednotes/delete-multiple`,
+        "http://localhost:5000/api/archivednotes/delete-multiple",
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -317,7 +316,7 @@ const Archivednotes = () => {
     setIsDeleting(true);
     try {
       await axios.delete(
-        `${VITE_API_BACKEND_URL}/api/archivednotes/del-single/${id}`,
+        `http://localhost:5000/api/archivednotes/del-single/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
@@ -366,7 +365,7 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const response = await axios.put(
-        `${VITE_API_BACKEND_URL}/api/arcnotes/restore-multiple`,
+        "http://localhost:5000/api/arcnotes/restore-multiple",
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -414,7 +413,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await axios.put(
-        `${VITE_API_BACKEND_URL}/api/arcnotes/restore/${id}`,
+        `http://localhost:5000/api/arcnotes/restore/${id}`,
         {}, // No body payload
         {
           headers: {
