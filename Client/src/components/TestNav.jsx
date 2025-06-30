@@ -42,7 +42,7 @@ const sidebarLinks = [
   { label: "Trash", icon: CiTrash, path: "/trash" },
   { label: "Favorites", icon: CiHeart, path: "/favorites" },
 ];
-import { api } from "../utils/api/api";
+
 // Define MotionBox for animating the new note form
 const MotionBox = motion(Box);
 
@@ -119,8 +119,8 @@ const Sidebar = ({ onNoteAdded }) => {
 
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
-      const response = await api.post(
-        `/api/notes/notes`,
+      const response = await axios.post(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes",
         {
           // Request body
           title: newNoteTitle,

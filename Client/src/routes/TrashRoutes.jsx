@@ -25,7 +25,7 @@ import {
   SkeletonText,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-// REMOVE THIS LINE: import axios from "axios"; // No longer needed if you consistently use your 'api' instance
+import axios from "axios";
 import {
   FaTrashAlt,
   FaHeart,
@@ -39,7 +39,6 @@ import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
 import book from "../assets/img/wmremove-transformed.png";
-import { api } from "../utils/api/api"; // Keep this import!
 
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
@@ -166,24 +165,6 @@ const Trashnotes = () => {
     onClose: onSingleRestoreClose,
   } = useDisclosure();
 
-  // Helper for displaying toasts
-  const displayToast = useCallback(
-    (title, description, status) => {
-      toast({
-        title,
-        description,
-        status,
-        position: "top",
-        duration: 5000,
-        isClosable: true,
-        icon:
-          status === "success" ? <FaCheckCircle /> : <FaExclamationCircle />,
-        variant: status === "error" ? "subtle" : "solid",
-      });
-    },
-    [toast]
-  );
-
   // --- Data Fetching ---
   const fetchTrashedNotes = async () => {
     setLoading(true);
@@ -212,9 +193,8 @@ const Trashnotes = () => {
       }
 
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const { data } = await api.get(
-        // Corrected: Use 'api' instance directly
-        "/api/notes/trashview", // Corrected: Relative path only
+      const { data } = await axios.get(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashview", // API endpoint for trash
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -373,14 +353,16 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await api.delete("/api/notes/delpermanentmutiple", {
-        // Corrected
-        data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include the JWT here
-        },
-      });
+      await axios.delete(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/delpermanentmutiple",
+        {
+          data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
+      );
 
       toast({
         title: "Notes Permanently Deleted",
@@ -425,9 +407,8 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await api.delete(
-        // Corrected
-        `/api/notes/trashdelete/${id}`, // Corrected: Relative path only
+      await axios.delete(
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashdelete/${id}`, // API endpoint for single permanent deletion
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -484,9 +465,8 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
-      const response = await api.put(
-        // Corrected
-        "/api/notes/restore-multiple-trash", // Corrected: Relative path only
+      const response = await axios.put(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-multiple-trash", // API endpoint to restore from trash to main notes
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -538,9 +518,8 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
-      const response = await api.post(
-        // Corrected
-        `/api/notes/restore-single-trash/${id}`, // Corrected: Relative path only
+      const response = await axios.post(
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-single-trash/${id}`, // API endpoint to restore single note from trash
         {}, // Empty body for POST request if only ID is in URL
         {
           headers: {
