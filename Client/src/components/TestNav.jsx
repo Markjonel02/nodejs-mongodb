@@ -122,7 +122,7 @@ const Sidebar = ({ onNoteAdded }) => {
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
       const response = await api.post(
-        "/api/notes/notes",
+        "/api/notes",
         {
           // Request body
           title: newNoteTitle,
