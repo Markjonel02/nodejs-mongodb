@@ -31,7 +31,9 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
 import { Link as RouterLink, useLocation } from "react-router-dom";
-
+const VITE_API_URL =
+  import.meta.env.VITE_API_BACKEND_URL ||
+  "https://nodejs-mongodb-bkpu.onrender.com"; // Assuming you have an environment variable for the API URL
 // Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
 // routes are used in the parent App.js (or similar) where <Routes> are defined.
 // The sidebar itself only needs the string path.
@@ -120,7 +122,7 @@ const Sidebar = ({ onNoteAdded }) => {
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
       const response = await axios.post(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes",
+        `${VITE_API_URL}/api/notes/notes`,
         {
           // Request body
           title: newNoteTitle,
