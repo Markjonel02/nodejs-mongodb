@@ -3,7 +3,7 @@ const router = express.Router();
 const noteController = require("../controllers/noteController");
 const { authenticateToken } = require("../middleware/authMiddleware");
 
-router.post("/notes", authenticateToken, noteController.createNote);
+router.post("/createnotes", authenticateToken, noteController.createNote);
 router.get("/getnotes", authenticateToken, noteController.getNotes);
 router.put("/updatenotes/:id", authenticateToken, noteController.updateNotes);
 

@@ -312,7 +312,7 @@ const Archivednotes = () => {
     onSingleDeleteClose(); // Close the dialog immediately
     setIsDeleting(true);
     try {
-      await api.delete(`/api/notes/archivednotes/del-single/${id}`, {
+      await api.delete(`/api/archivednotes/del-single/${id}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },
@@ -359,7 +359,7 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const response = await api.put(
-        `/api/notes/arcnotes/restore-multiple`,
+        `/api/arcnotes/restore-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -407,7 +407,7 @@ const Archivednotes = () => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await api.put(
-        `/api/notes/arcnotes/restore/${id}`,
+        `/api/arcnotes/restore/${id}`,
         {}, // No body payload
         {
           headers: {

@@ -117,7 +117,7 @@ const UserCreation = () => {
 
     try {
       const response = await axios.post(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/user/usercreate",
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/usercreate",
         {
           firstName,
           lastName,

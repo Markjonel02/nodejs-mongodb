@@ -124,7 +124,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
       const response = await axios.get(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/getnotes",
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/getnotes",
         {
           headers: {
             Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
@@ -246,7 +246,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/delnotes/${noteToDelete}`,
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -297,7 +297,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/archivednotes/${noteToArchive}`,
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -344,7 +344,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/favorites/${noteId}`,
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -417,7 +417,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/updatenotes/${noteToUpdate._id}`,
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,

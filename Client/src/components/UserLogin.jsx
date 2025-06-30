@@ -46,7 +46,7 @@ const UserLogin = ({ onLoginSuccess }) => {
     try {
       // FIX: Use the 'api' instance directly and provide the relative path
       const response = await axios.post(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/user/userlogin",
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/userlogin",
         {
           identifier, // Send the identifier (username or email)
           password,
