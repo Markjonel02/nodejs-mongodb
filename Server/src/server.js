@@ -10,19 +10,17 @@ dotenv.config(); // Load environment variables from .env file
 const app = express();
 const port = process.env.PORT; // Use PORT from .env or default to 5000
 
+const corsOptions = {
+  origin: process.env.CLIENT_URL, // Set this in Vercel env variables
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  credentials: true, // If you're sending cookies/auth headers
+  optionsSuccessStatus: 200,
+};
 // Middleware
 app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-/* app.use(express.static(path.join(__dirname, "public"))); */
-// Sample route
-// Configure CORS to allow requests from your Vercel frontend URL
-const corsOptions = {
-  origin: process.env.CLIENT_URL, // Set this in Vercel env variables
-  credentials: true, // If you're sending cookies/auth headers
-  optionsSuccessStatus: 200,
-};
 app.use(cors(corsOptions));
 
 const noteRoutes = require("./routes/noteRoutes");
@@ -46,6 +44,7 @@ connectDB()
   .then(() => {
     app.listen(port, () => {
       console.log(`Server is running on http://localhost:${port}`);
+      console.log(`CORS_ORIGIN set to: ${process.env.CLIENT_URL}`);
     });
   })
   .catch((err) => {
