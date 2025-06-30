@@ -30,12 +30,12 @@ import {
   Textarea,
   HStack,
   Circle,
-  // Flex, // Removed Flex as it was only used for the logout button
+  Flex,
   Skeleton,
   SkeletonText,
   useBreakpointValue,
 } from "@chakra-ui/react";
-import { api } from "../utils/api/api";
+
 import { FiMoreHorizontal } from "react-icons/fi";
 import { useState, useEffect, useRef, memo, useMemo, useCallback } from "react";
 import { FaNoteSticky } from "react-icons/fa6";
@@ -49,7 +49,6 @@ import { colors } from "../utils/colors";
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
-import { applyTimestamps } from "../../../Server/src/models/Trash";
 
 // Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
 // to force a refetch (e.g., after creating a new note).
@@ -91,8 +90,6 @@ const Folders = ({ shouldRefetchNotes }) => {
   const [updatedNotes, setUpdatedNotes] = useState("");
   const [updatedColor, setUpdatedColor] = useState("");
 
-  // Removed: Logout Confirmation Modal disclosure and ref
-
   const displayToast = (title, description, status) => {
     toast({
       title,
@@ -126,7 +123,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await api.get(`/api/notes/getnotes`, {
+      const response = await axios.get("/api/notes/getnotes", {
         headers: {
           Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
         },
@@ -245,11 +242,14 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await api.delete(`/api/notes/delnotes/${noteToDelete}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.delete(
+        `http://localhost:5000/api/notes/delnotes/${noteToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -293,8 +293,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await api.delete(
-        `/api/notes/archivednotes/${noteToArchive}`,
+      const response = await axios.delete(
+        `http://localhost:5000/api/notes/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -340,8 +340,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await api.put(
-        `/api/notes/favorites/${noteId}`,
+      const response = await axios.put(
+        `http://localhost:5000/api/notes/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -413,8 +413,8 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
-      const response = await api.put(
-        `/api/notes/updatenotes/${noteToUpdate._id}`,
+      const response = await axios.put(
+        `http://localhost:5000/api/notes/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
@@ -457,8 +457,6 @@ const Folders = ({ shouldRefetchNotes }) => {
       setUpdatedColor("");
     }
   };
-
-  // Removed: handleLogout and confirmLogout functions
 
   const filteredAndSortedNotes = useMemo(() => {
     let currentNotes = [...notes];
@@ -695,7 +693,6 @@ const Folders = ({ shouldRefetchNotes }) => {
       <Heading mt={10} mb={4} textAlign="center">
         My Notes
       </Heading>
-      {/* Removed: Logout Button */}
       <ButtonGroup mb={2} justifyContent="center" width="100%" display="flex">
         {["Todays", "This Week", "This Month"].map((tab) => (
           <Button
@@ -841,7 +838,6 @@ const Folders = ({ shouldRefetchNotes }) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-      {/* Removed: Logout Confirmation AlertDialog */}
     </Box>
   );
 };

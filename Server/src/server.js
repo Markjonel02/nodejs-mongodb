@@ -29,10 +29,12 @@ app.use("/api/notes", noteRoutes); // Prefix all note routes with /api/notes
 app.use("/api/user", userRoutes); // Prefix all user routes with /api/user
 
 // Sample root API route
-app.get("/api", (req, res) => {
-  res.send("Connected to API");
+app.get("/api/notes", (req, res) => {
+  res.send("Connected to APInotes");
 });
-
+app.get("/api/user", (req, res) => {
+  res.send("Connected to API user");
+});
 // Export the app for testing or further configuration
 module.exports = app;
 
