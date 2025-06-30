@@ -123,14 +123,11 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
-      const response = await axios.get(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/getnotes",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
-          },
-        }
-      );
+      const response = await axios.get("http://localhost:5000/api/notes/getnotes", {
+        headers: {
+          Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
+        },
+      });
       setNotes(response.data);
     } catch (err) {
       console.error("Error fetching notes:", err);
@@ -246,7 +243,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/delnotes/${noteToDelete}`,
+        `http://localhost:5000/api/notes/delnotes/${noteToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -297,7 +294,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.delete(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/archivednotes/${noteToArchive}`,
+        `http://localhost:5000/api/notes/archivednotes/${noteToArchive}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -344,7 +341,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/favorites/${noteId}`,
+        `http://localhost:5000/api/notes/favorites/${noteId}`,
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -417,7 +414,7 @@ const Folders = ({ shouldRefetchNotes }) => {
       }
 
       const response = await axios.put(
-        `https://nodejs-mongodb-server-7pfw.onrender.com/api/updatenotes/${noteToUpdate._id}`,
+        `http://localhost:5000/api/notes/updatenotes/${noteToUpdate._id}`,
         {
           title: updatedTitle,
           notes: updatedNotes,
