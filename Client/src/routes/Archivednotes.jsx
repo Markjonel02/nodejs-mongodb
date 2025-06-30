@@ -36,7 +36,7 @@ import {
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
-
+import { api } from "../utils/api/api";
 // Import the book image
 import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
 
@@ -174,14 +174,11 @@ const Archivednotes = () => {
     setError(null); // Clear previous errors
     try {
       const token = localStorage.getItem("jwtToken");
-      const { data } = await axios.get(
-        "http://localhost:5000/api/getarchivenotes",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, //  Send token
-          },
-        }
-      );
+      const { data } = await api.get(`/api/notes/getarchivenotes`, {
+        headers: {
+          Authorization: `Bearer ${token}`, //  Send token
+        },
+      });
       setArchivedNotes(data);
     } catch (err) {
       console.error("Error fetching archived notes:", err);
@@ -272,8 +269,8 @@ const Archivednotes = () => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("jwtToken");
-      await axios.post(
-        "http://localhost:5000/api/archivednotes/delete-multiple",
+      await api.post(
+        `/api/notes/archivednotes/delete-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -315,14 +312,11 @@ const Archivednotes = () => {
     onSingleDeleteClose(); // Close the dialog immediately
     setIsDeleting(true);
     try {
-      await axios.delete(
-        `http://localhost:5000/api/archivednotes/del-single/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-          },
-        }
-      );
+      await api.delete(`/api/notes/archivednotes/del-single/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+        },
+      });
       toast({
         title: "Note Deleted",
         description: "The note has been moved to trash.",
@@ -364,8 +358,8 @@ const Archivednotes = () => {
 
     setIsRestoring(true);
     try {
-      const response = await axios.put(
-        "http://localhost:5000/api/arcnotes/restore-multiple",
+      const response = await api.put(
+        `/api/notes/arcnotes/restore-multiple`,
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -412,8 +406,8 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const token = localStorage.getItem("jwtToken");
-      const response = await axios.put(
-        `http://localhost:5000/api/arcnotes/restore/${id}`,
+      const response = await api.put(
+        `/api/notes/arcnotes/restore/${id}`,
         {}, // No body payload
         {
           headers: {

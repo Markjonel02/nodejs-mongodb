@@ -15,15 +15,14 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-/* app.use(express.static(path.join(__dirname, "public"))); */
-// Sample route
-// Configure CORS to allow requests from your Vercel frontend URL
-const corsOptions = {
-  origin: process.env.CLIENT_URL, // Set this in Vercel env variables
-  credentials: true, // If you're sending cookies/auth headers
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
 
 const noteRoutes = require("./routes/noteRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -32,7 +31,12 @@ app.use("/api/user", userRoutes);
 app.get("/api/notes", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
-
+app.get("/", (req, res) => {
+  res.send("Welcome to the API! Try /api/notes or /api/user");
+});
+app.get("/api", (req, res) => {
+  res.send("Connected to the API!");
+});
 app.get("/api/user", (req, res) => {
   res.send("welcome to user");
 });

@@ -194,7 +194,7 @@ const Trashnotes = () => {
 
       setIsUserLoggedIn(true); // User is logged in, set state to true
       const { data } = await axios.get(
-        "http://localhost:5000/api/trashview", // API endpoint for trash
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashview", // API endpoint for trash
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -353,13 +353,16 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
-      await axios.delete("http://localhost:5000/api/delpermanentmutiple", {
-        data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include the JWT here
-        },
-      });
+      await axios.delete(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/delpermanentmutiple",
+        {
+          data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // Include the JWT here
+          },
+        }
+      );
 
       toast({
         title: "Notes Permanently Deleted",
@@ -405,7 +408,7 @@ const Trashnotes = () => {
         return;
       }
       await axios.delete(
-        `http://localhost:5000/api/trashdelete/${id}`, // API endpoint for single permanent deletion
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashdelete/${id}`, // API endpoint for single permanent deletion
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -463,7 +466,7 @@ const Trashnotes = () => {
         return;
       }
       const response = await axios.put(
-        "http://localhost:5000/api/restore-multiple-trash", // API endpoint to restore from trash to main notes
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-multiple-trash", // API endpoint to restore from trash to main notes
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -516,7 +519,7 @@ const Trashnotes = () => {
         return;
       }
       const response = await axios.post(
-        `http://localhost:5000/api/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-single-trash/${id}`, // API endpoint to restore single note from trash
         {}, // Empty body for POST request if only ID is in URL
         {
           headers: {

@@ -154,7 +154,7 @@ const Favorites = () => {
     setError(null);
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/getfavorites",
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/getfavorites",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
@@ -270,7 +270,7 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
     try {
       await axios.patch(
-        "http://localhost:5000/api/favorite/multiple-unfavorite",
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/favorite/multiple-unfavorite",
         {
           ids: Array.from(selectedNotes),
         },
@@ -321,7 +321,7 @@ const Favorites = () => {
 
     try {
       await axios.put(
-        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,
