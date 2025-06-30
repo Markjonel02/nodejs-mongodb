@@ -120,7 +120,7 @@ const Sidebar = ({ onNoteAdded }) => {
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
       const response = await axios.post(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes",
+        "https://nodejs-mongodb-server-7pfw.onrender.comapi/notes",
         {
           // Request body
           title: newNoteTitle,
