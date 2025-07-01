@@ -1,6 +1,7 @@
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 dotenv.config();
+
 const connectDB = async () => {
   const MONGO_URI = process.env.MONGO_URI;
 
@@ -17,5 +18,4 @@ const connectDB = async () => {
     .catch((err) => console.error("MongoDB connection error:", err));
 };
 
-module.exports = connectDB;
- 
+export default connectDB; // Export the connectDB function using ES6 syntax

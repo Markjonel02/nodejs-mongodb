@@ -44,8 +44,7 @@ const UserLogin = ({ onLoginSuccess }) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/user/userlogin` ||
-          VITE_API_BACKEND_URL + "/user/userlogin", // Your backend login route
+        `http://localhost:5000/api/user/userlogin`, // Your backend login route
         {
           identifier, // Send the identifier (username or email)
           password,
