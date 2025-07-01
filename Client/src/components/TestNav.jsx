@@ -32,7 +32,7 @@ import axios from "axios";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { MdApi } from "react-icons/md";
-import { axiosInstance } from "../api/axiosInstance";
+import { axiosInstance } from "../lib/axiosInstance";
 // Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
 // routes are used in the parent App.js (or similar) where <Routes> are defined.
 // The sidebar itself only needs the string path.

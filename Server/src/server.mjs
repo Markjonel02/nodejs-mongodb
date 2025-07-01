@@ -7,8 +7,8 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 import connectDB from "./config/Connection.js";
-import noteRoutes from "./routes/noteRoutes.mjs";
-import userRoutes from "./routes/userRoutes.mjs";
+import noteRoutes from "../src/routes/noteRoutes.mjs";
+import userRoutes from "../src/routes/userRoutes.mjs";
 
 // Load environment variables
 dotenv.config();
@@ -48,15 +48,11 @@ app.get("/api", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
 
-app.get("/api/user", (req, res) => {
-  res.send("Welcome to the user route!");
-});
-
 // Serve static frontend in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../Client/dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Client/dist/index.html"));
+  app.all("/{*any}", (req, res) => {
+    res.sendFile(path.join(__dirname, "../Client", "dist", "index.html"));
   });
 }
 

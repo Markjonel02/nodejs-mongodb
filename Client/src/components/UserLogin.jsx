@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
-import { axiosInstance } from "../api/axiosInstance";
+import { axiosInstance } from "../lib/axiosInstance";
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
