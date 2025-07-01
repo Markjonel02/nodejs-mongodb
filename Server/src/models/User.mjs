@@ -1,5 +1,5 @@
 import mongoose from "mongoose"; // Use ES6 import syntax for consistency
-import bcrypt from "bcryptjs"; // Import bcrypt for password hashing
+import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
 const userSchema = new mongoose.Schema(
   {

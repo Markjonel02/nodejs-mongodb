@@ -4,6 +4,8 @@ import cors from "cors";
 import connectDB from "./config/Connection.js";
 import path from "path";
 import dotenv from "dotenv";
+import { fileURLToPath } from "url"; // Import fileURLToPath
+import { dirname } from "path"; // Import dirname
 
 // Load environment variables from .env file
 dotenv.config();
@@ -12,8 +14,9 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// __dirname is a global variable in Node.js, so no need to declare it.
-// We can directly use it for path operations.
+// ES module equivalents for __dirname and __filename
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // CORS configuration
 // Determine the CORS origin based on the environment
@@ -48,7 +51,7 @@ import noteRoutes from "./routes/noteRoutes.mjs";
 import userRoutes from "./routes/userRoutes.mjs"; // Assuming this file exists and contains login/register routes
 
 // Route for notes, now prefixed with /api and using authenticateToken
-app.use("/api", authenticateToken, noteRoutes);
+app.use("/api", noteRoutes);
 // Route for user-related actions
 app.use("/api/user", userRoutes);
 
@@ -74,7 +77,8 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Export the app for testing or further configuration (e.g., if using a serverless function)
-module.exports = app;
+// Changed module.exports to export default for ES Module compatibility
+export default app;
 
 // Connect to the database and start the server
 connectDB()

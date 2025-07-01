@@ -1,18 +1,17 @@
 import express from "express";
-import noteController from "../controllers/noteController.mjs";
-import express from "../controllers/noteController.mjs";
-import { authenticateToken } from "../";
-import noteController from "../controllers/noteController.mjs";
+
+import * as noteController from "../controllers/noteController.mjs";
 import { authenticateToken } from "../middleware/authMiddleware.mjs";
 
-const router = (express.Router = express.Router());
+// Corrected router initialization:
+const router = express.Router();
 
+// --- NOTES MANAGEMENT ---
 router.post("/notes", authenticateToken, noteController.createNote);
 router.get("/getnotes", authenticateToken, noteController.getNotes);
 router.put("/updatenotes/:id", authenticateToken, noteController.updateNotes);
 
-// --- DELETE & TRASH ---
-
+// --- TRASH MANAGEMENT ---
 router.delete("/delnotes/:id", authenticateToken, noteController.delNotes);
 router.get("/trashview", authenticateToken, noteController.getTrashNotes);
 router.delete(
@@ -85,4 +84,6 @@ router.patch(
   authenticateToken,
   noteController.unfavoriteMultiple
 );
+
+// Changed from module.exports = router; to export default router; for ES Modules
 export default router;
