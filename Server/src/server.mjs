@@ -1,96 +1,75 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import connectDB from "./config/Connection.js";
-import path from "path";
 import dotenv from "dotenv";
-import { fileURLToPath } from "url"; // Import fileURLToPath
-import { dirname } from "path"; // Import dirname
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-// Load environment variables from .env file
+import connectDB from "./config/Connection.js";
+import noteRoutes from "./routes/noteRoutes.mjs";
+import userRoutes from "./routes/userRoutes.mjs";
+
+// Load environment variables
 dotenv.config();
 
-// Create the Express app
-const app = express();
-const port = process.env.PORT || 5000;
-
-// ES module equivalents for __dirname and __filename
+// ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// CORS configuration
-// Determine the CORS origin based on the environment
-let corsOrigin;
-if (process.env.NODE_ENV === "production") {
-  // In production, use the CLIENT_URL environment variable
-  corsOrigin = process.env.CLIENT_URL;
-} else {
-  // In development, allow localhost:5173 (or your frontend dev server port)
-  corsOrigin = "http://localhost:5173";
-}
+// Init Express
+const app = express();
+const port = process.env.PORT || 5000;
+
+// Setup CORS origin based on environment
+const corsOrigin =
+  process.env.NODE_ENV === "production"
+    ? process.env.CLIENT_URL
+    : "http://localhost:5173";
 
 const corsOptions = {
-  origin: corsOrigin, // Dynamic origin based on environment
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Explicitly allow OPTIONS for preflight requests
-  credentials: true, // Allow cookies/auth headers
-  optionsSuccessStatus: 200, // For preflight requests
+  origin: corsOrigin,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  optionsSuccessStatus: 200,
 };
 
 // Middleware
-app.use(express.json()); // Body parser for JSON
-app.use(bodyParser.json()); // bodyParser for JSON (redundant with express.json() but kept as per your input)
-app.use(bodyParser.urlencoded({ extended: true })); // bodyParser for URL-encoded data
-
-// Apply the configured CORS options unconditionally
-// This ensures CORS headers are sent for ALL routes, including preflight OPTIONS requests
 app.use(cors(corsOptions));
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Import and use routes
-
-import noteRoutes from "./routes/noteRoutes.mjs";
-import userRoutes from "./routes/userRoutes.mjs"; // Assuming this file exists and contains login/register routes
-
-// Route for notes, now prefixed with /api and using authenticateToken
+// API routes
 app.use("/api", noteRoutes);
-// Route for user-related actions
 app.use("/api/user", userRoutes);
 
-// --- API Health Checks / Sample Routes ---
-// These are fine for testing if the API is reachable
+// Health check routes
 app.get("/api", (req, res) => {
   res.send("Welcome to the Notes API!");
 });
 
 app.get("/api/user", (req, res) => {
-  res.send("welcome to user");
+  res.send("Welcome to the user route!");
 });
 
-// Serve static files from the React app's build directory (Client/dist)
-// This block should only run in production when the backend is also serving the frontend
+// Serve static frontend in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../Client/dist")));
-  // Catch-all route to serve the React app's index.html for any other requests
-  // This must come AFTER all your API routes
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Client", "dist", "index.html"));
+    res.sendFile(path.join(__dirname, "../Client/dist/index.html"));
   });
 }
 
-// Export the app for testing or further configuration (e.g., if using a serverless function)
-// Changed module.exports to export default for ES Module compatibility
-export default app;
-
-// Connect to the database and start the server
+// Start server only after DB connection
 connectDB()
   .then(() => {
     app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
-      // Log the CORS origin to confirm it's loaded correctly from environment variables or set for dev
-      console.log(`CORS Origin set to: ${corsOrigin}`);
-      console.log(`Node Environment: ${process.env.NODE_ENV}`); // Log the environment
+      console.log(`🚀 Server running at http://localhost:${port}`);
+      console.log(`🌐 CORS Origin: ${corsOrigin}`);
+      console.log(`🌱 Environment: ${process.env.NODE_ENV}`);
     });
   })
   .catch((err) => {
-    console.error("Error connecting to MongoDB:", err);
-    process.exit(1); // Exit the process with an error code
+    console.error("❌ Failed to connect to MongoDB:", err);
+    process.exit(1);
   });

@@ -32,7 +32,7 @@ import axios from "axios";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { MdApi } from "react-icons/md";
-import { api } from "../../lib/api/axiosInstance";
+import { axiosInstance } from "../api/axiosInstance";
 // Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
 // routes are used in the parent App.js (or similar) where <Routes> are defined.
 // The sidebar itself only needs the string path.
@@ -121,7 +121,7 @@ const Sidebar = ({ onNoteAdded }) => {
 
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
-      const response = await api.post(
+      const response = await axiosInstance.post(
         "/api/notes",
         {
           // Request body
