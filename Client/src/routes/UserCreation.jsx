@@ -16,6 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
+import { axiosInstance } from "../lib/axiosInstance";
 
 const UserCreation = () => {
   const navigate = useNavigate();
@@ -116,16 +117,13 @@ const UserCreation = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/user/usercreate",
-        {
-          firstName,
-          lastName,
-          username,
-          email,
-          password,
-        }
-      );
+      const response = await axiosInstance.post("/user/usercreate", {
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
 
       const data = response.data;
 
