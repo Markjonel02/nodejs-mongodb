@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const ArchivedSchema = new mongoose.Schema(
   {
     title: {
@@ -49,4 +49,4 @@ const ArchivedSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Archived", ArchivedSchema);
+export default mongoose.model("Archived", ArchivedSchema); // Export the Archived model using ES6 syntax

@@ -1,11 +1,11 @@
-const Addnote = require("../models/Addnote");
-const Trashnotes = require("../models/Trash");
-const Archived = require("../models/Archived");
-const Trash = require("../models/Trash"); // Redundant import if Trashnotes is the same, but harmless
-const mongoose = require("mongoose");
+import Addnote from "../models/Addnote.mjs";
+import Trashnotes from "../models/Trash.mjs";
+import Archived from "../models/Archived.mjs";
+import Trash from "../models/Trash.mjs"; // Redundant if same as Trashnotes
+import mongoose from "mongoose";
 
 // Create a new note
-exports.createNote = async (req, res) => {
+export const createNote = async (req, res) => {
   console.log("Request received for createNote.");
   console.log("Request body:", req.body); // Check if data is coming through
 
@@ -53,7 +53,7 @@ exports.createNote = async (req, res) => {
   }
 };
 
-exports.getNotes = async (req, res) => {
+export const getNotes = async (req, res) => {
   try {
     const userId = req.user.id; // Get the authenticated user's ID from req.user
     if (!userId) {
@@ -75,7 +75,7 @@ exports.getNotes = async (req, res) => {
   }
 };
 
-exports.updateNotes = async (req, res) => {
+export const updateNotes = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -110,7 +110,7 @@ exports.updateNotes = async (req, res) => {
 };
 
 // Delete a note and move it to the Trash collection
-exports.delNotes = async (req, res) => {
+export const delNotes = async (req, res) => {
   try {
     const { id } = req.params;
     // Get the authenticated user's ID from req.user (populated by JWT middleware)
@@ -156,7 +156,7 @@ exports.delNotes = async (req, res) => {
 };
 
 // --- DELETE TRASH PERMANENTLY ---
-exports.getTrashNotes = async (req, res) => {
+export const getTrashNotes = async (req, res) => {
   try {
     const userId = req.user.id; // Get the authenticated user's ID from req.user
     if (!userId) {
@@ -177,7 +177,7 @@ exports.getTrashNotes = async (req, res) => {
   }
 };
 
-exports.delPermanently = async (req, res) => {
+export const delPermanently = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -211,7 +211,7 @@ exports.delPermanently = async (req, res) => {
 };
 
 // This controller seems to be a duplicate of delPermanently, consider removing one.
-exports.delPermanentSingle = async (req, res) => {
+export const delPermanentSingle = async (req, res) => {
   try {
     const { id } = req.params; // ID of the note to permanently delete
     const userId = req.user.id; // Get the authenticated user's ID
@@ -240,7 +240,7 @@ exports.delPermanentSingle = async (req, res) => {
   }
 };
 
-exports.delPermanentMultiple = async (req, res) => {
+export const delPermanentMultiple = async (req, res) => {
   try {
     const { ids } = req.body; // Array of note IDs to permanently delete
     const userId = req.user.id; // Get the authenticated user's ID
@@ -279,7 +279,7 @@ exports.delPermanentMultiple = async (req, res) => {
 };
 
 // --- RESTORE TO NOTES (Single Note from Trash) ---
-exports.restoreSingleNotetrash = async (req, res) => {
+export const restoreSingleNotetrash = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -324,7 +324,7 @@ exports.restoreSingleNotetrash = async (req, res) => {
   }
 };
 
-exports.restoreMultipleTrash = async (req, res) => {
+export const restoreMultipleTrash = async (req, res) => {
   try {
     const { ids } = req.body;
     const userId = req.user.id;
@@ -389,7 +389,7 @@ exports.restoreMultipleTrash = async (req, res) => {
 };
 
 //Archived controller section
-exports.archivedNotes = async (req, res) => {
+export const archivedNotes = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -429,7 +429,7 @@ exports.archivedNotes = async (req, res) => {
 };
 
 //getting archived notes
-exports.getArchivedNotes = async (req, res) => {
+export const getArchivedNotes = async (req, res) => {
   try {
     const userId = req.user.id; // Get the authenticated user's ID from req.user
     if (!userId) {
@@ -449,7 +449,7 @@ exports.getArchivedNotes = async (req, res) => {
 };
 
 //delete single Archived notes in archivedNotes
-exports.delArchivedNoteSingle = async (req, res) => {
+export const delArchivedNoteSingle = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -485,7 +485,7 @@ exports.delArchivedNoteSingle = async (req, res) => {
 };
 
 //delete Multiple in Archived notes
-exports.deleteMultipleArchivedNotes = async (req, res) => {
+export const deleteMultipleArchivedNotes = async (req, res) => {
   try {
     const { ids } = req.body;
     const userId = req.user.id;
@@ -541,7 +541,7 @@ exports.deleteMultipleArchivedNotes = async (req, res) => {
 };
 
 //restore multiple (from Archived to Addnote)
-exports.restoreMultipleNotes = async (req, res) => {
+export const restoreMultipleNotes = async (req, res) => {
   try {
     const { ids } = req.body;
     const userId = req.user.id; // Ensure userId is used for security
@@ -612,7 +612,7 @@ exports.restoreMultipleNotes = async (req, res) => {
 };
 
 //restore single notes (from Archived to Addnote)
-exports.restoreSingleNote = async (req, res) => {
+export const restoreSingleNote = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id; // This is correctly extracted from the middleware
@@ -658,7 +658,7 @@ exports.restoreSingleNote = async (req, res) => {
   }
 };
 
-exports.createFavorite = async (req, res) => {
+export const createFavorite = async (req, res) => {
   try {
     const { id } = req.params; // Expects ID from URL param
     let { isFavorite } = req.body; // Expects the new status from body (boolean)
@@ -711,7 +711,7 @@ exports.createFavorite = async (req, res) => {
   }
 };
 
-exports.getFavoriteNotes = async (req, res) => {
+export const getFavoriteNotes = async (req, res) => {
   try {
     console.log("Fetching favorite notes...");
     const userId = req.user.id;
@@ -746,7 +746,7 @@ exports.getFavoriteNotes = async (req, res) => {
   }
 };
 
-exports.unfavoriteSingle = async (req, res) => {
+export const unfavoriteSingle = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -797,7 +797,7 @@ exports.unfavoriteSingle = async (req, res) => {
 };
 
 // Correct controller (with IDs in req.body)
-exports.unfavoriteMultiple = async (req, res) => {
+export const unfavoriteMultiple = async (req, res) => {
   try {
     const { ids } = req.body;
     const userId = req.user.id;

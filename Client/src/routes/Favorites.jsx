@@ -38,7 +38,7 @@ import { NoteNavigation } from "../components/NoteNavigation"; // Adjust this pa
 
 // Import the placeholder image for no notes found
 import book from "../assets/img/wmremove-transformed.png"; // Adjust this path if necessary
-
+import { axiosInstance } from "../lib/axiosInstance";
 // --- FavoriteNoteCard Component ---
 const FavoriteNoteCard = ({
   note,
@@ -153,14 +153,11 @@ const Favorites = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(
-        "http://localhost:5000/api/getfavorites",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-          },
-        }
-      );
+      const { data } = await axiosInstance.get("/getfavorites", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+        },
+      });
       setFavoriteNotes(data);
     } catch (err) {
       console.error("Error fetching favorite notes:", err);
@@ -269,8 +266,8 @@ const Favorites = () => {
 
     setIsTogglingFavorite(true);
     try {
-      await axios.patch(
-        "http://localhost:5000/api/favorite/multiple-unfavorite",
+      await axiosInstance.patch(
+        "/favorite/multiple-unfavorite",
         {
           ids: Array.from(selectedNotes),
         },
@@ -320,8 +317,8 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
 
     try {
-      await axios.put(
-        `http://localhost:5000/api/favorites/single-unfavorite/${id}`,
+      await axiosInstance.put(
+        `/favorites/single-unfavorite/${id}`,
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,
