@@ -49,6 +49,7 @@ import { colors } from "../utils/colors";
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
+import { axiosInstance } from "../lib/axiosInstance";
 
 // Assume that 'shouldRefetchNotes' is a prop that a parent component can set to true
 // to force a refetch (e.g., after creating a new note).
@@ -123,6 +124,7 @@ const Folders = ({ shouldRefetchNotes }) => {
 
       // If token exists, proceed with fetch
       setIsUserLoggedIn(true); // User is logged in, set state to true
+<<<<<<< HEAD
       const response = await axios.get(
         "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/getnotes",
         {
@@ -131,6 +133,13 @@ const Folders = ({ shouldRefetchNotes }) => {
           },
         }
       );
+=======
+      const response = await axiosInstance.get("/getnotes", {
+        headers: {
+          Authorization: `Bearer ${token}`, // THIS IS THE CRUCIAL PART
+        },
+      });
+>>>>>>> production
       setNotes(response.data);
     } catch (err) {
       console.error("Error fetching notes:", err);
@@ -245,6 +254,7 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
+<<<<<<< HEAD
       const response = await axios.delete(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/delnotes/${noteToDelete}`,
         {
@@ -253,6 +263,13 @@ const Folders = ({ shouldRefetchNotes }) => {
           },
         }
       );
+=======
+      const response = await axiosInstance.delete(`/delnotes/${noteToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+>>>>>>> production
 
       if (response.status === 200) {
         setNotes((prevNotes) =>
@@ -296,8 +313,13 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
+<<<<<<< HEAD
       const response = await axios.delete(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/archivednotes/${noteToArchive}`,
+=======
+      const response = await axiosInstance.delete(
+        `/archivednotes/${noteToArchive}`,
+>>>>>>> production
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -343,8 +365,13 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
+<<<<<<< HEAD
       const response = await axios.put(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/favorites/${noteId}`,
+=======
+      const response = await axiosInstance.put(
+        `/favorites/${noteId}`,
+>>>>>>> production
         { isFavorite: !currentIsFavorite },
         {
           headers: {
@@ -416,8 +443,13 @@ const Folders = ({ shouldRefetchNotes }) => {
         return;
       }
 
+<<<<<<< HEAD
       const response = await axios.put(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/updatenotes/${noteToUpdate._id}`,
+=======
+      const response = await axiosInstance.put(
+        `/updatenotes/${noteToUpdate._id}`,
+>>>>>>> production
         {
           title: updatedTitle,
           notes: updatedNotes,

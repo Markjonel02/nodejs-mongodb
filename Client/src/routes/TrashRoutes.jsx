@@ -39,6 +39,7 @@ import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
 
 import book from "../assets/img/wmremove-transformed.png";
+import { axiosInstance } from "../lib/axiosInstance";
 
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
@@ -193,8 +194,13 @@ const Trashnotes = () => {
       }
 
       setIsUserLoggedIn(true); // User is logged in, set state to true
+<<<<<<< HEAD
       const { data } = await axios.get(
         "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashview", // API endpoint for trash
+=======
+      const { data } = await axiosInstance.get(
+        "/trashview", // API endpoint for trash
+>>>>>>> production
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -353,6 +359,7 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
+<<<<<<< HEAD
       await axios.delete(
         "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/delpermanentmutiple",
         {
@@ -363,6 +370,15 @@ const Trashnotes = () => {
           },
         }
       );
+=======
+      await axiosInstance.delete("/delpermanentmutiple", {
+        data: { ids: Array.from(selectedNotes) }, // Ensure data is wrapped correctly
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the JWT here
+        },
+      });
+>>>>>>> production
 
       toast({
         title: "Notes Permanently Deleted",
@@ -407,8 +423,13 @@ const Trashnotes = () => {
         setIsDeleting(false);
         return;
       }
+<<<<<<< HEAD
       await axios.delete(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/trashdelete/${id}`, // API endpoint for single permanent deletion
+=======
+      await axiosInstance.delete(
+        `/trashdelete/${id}`, // API endpoint for single permanent deletion
+>>>>>>> production
         {
           headers: {
             Authorization: `Bearer ${token}`, // Include the JWT here
@@ -465,8 +486,13 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
+<<<<<<< HEAD
       const response = await axios.put(
         "https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-multiple-trash", // API endpoint to restore from trash to main notes
+=======
+      const response = await axiosInstance.put(
+        "/restore-multiple-trash", // API endpoint to restore from trash to main notes
+>>>>>>> production
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -518,8 +544,13 @@ const Trashnotes = () => {
         setIsRestoring(false);
         return;
       }
+<<<<<<< HEAD
       const response = await axios.post(
         `https://nodejs-mongodb-server-7pfw.onrender.com/api/notes/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+=======
+      const response = await axiosInstance.post(
+        `/restore-single-trash/${id}`, // API endpoint to restore single note from trash
+>>>>>>> production
         {}, // Empty body for POST request if only ID is in URL
         {
           headers: {

@@ -36,10 +36,13 @@ import {
 import { usePagination } from "../customhooks/usePagination";
 import { PaginationControls } from "../components/PaginationControls";
 import { NoteNavigation } from "../components/NoteNavigation";
+<<<<<<< HEAD
 import { api } from "../utils/api/api";
+=======
+>>>>>>> production
 // Import the book image
 import book from "../assets/img/wmremove-transformed.png"; // Make sure this path is correct
-
+import { axiosInstance } from "../lib/axiosInstance";
 // --- NoteCard Component (No changes needed, looks good!) ---
 const NoteCard = ({
   note,
@@ -174,7 +177,11 @@ const Archivednotes = () => {
     setError(null); // Clear previous errors
     try {
       const token = localStorage.getItem("jwtToken");
+<<<<<<< HEAD
       const { data } = await api.get(`/api/notes/getarchivenotes`, {
+=======
+      const { data } = await axiosInstance.get("/getarchivenotes", {
+>>>>>>> production
         headers: {
           Authorization: `Bearer ${token}`, //  Send token
         },
@@ -269,8 +276,13 @@ const Archivednotes = () => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("jwtToken");
+<<<<<<< HEAD
       await api.post(
         `/api/notes/archivednotes/delete-multiple`,
+=======
+      await axiosInstance.post(
+        "/archivednotes/delete-multiple",
+>>>>>>> production
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -312,7 +324,11 @@ const Archivednotes = () => {
     onSingleDeleteClose(); // Close the dialog immediately
     setIsDeleting(true);
     try {
+<<<<<<< HEAD
       await api.delete(`/api/notes/archivednotes/del-single/${id}`, {
+=======
+      await axiosInstance.delete(`/archivednotes/del-single/${id}`, {
+>>>>>>> production
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },
@@ -358,8 +374,13 @@ const Archivednotes = () => {
 
     setIsRestoring(true);
     try {
+<<<<<<< HEAD
       const response = await api.put(
         `/api/notes/arcnotes/restore-multiple`,
+=======
+      const response = await axiosInstance.put(
+        "/arcnotes/restore-multiple",
+>>>>>>> production
         { ids: Array.from(selectedNotes) },
         {
           headers: {
@@ -406,8 +427,13 @@ const Archivednotes = () => {
     setIsRestoring(true);
     try {
       const token = localStorage.getItem("jwtToken");
+<<<<<<< HEAD
       const response = await api.put(
         `/api/notes/arcnotes/restore/${id}`,
+=======
+      const response = await axiosInstance.put(
+        `/arcnotes/restore/${id}`,
+>>>>>>> production
         {}, // No body payload
         {
           headers: {

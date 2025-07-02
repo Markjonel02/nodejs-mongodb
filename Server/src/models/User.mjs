@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt"); // Import bcrypt instead of crypto for hashing
+import mongoose from "mongoose"; // Use ES6 import syntax for consistency
+import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
 const userSchema = new mongoose.Schema(
   {
@@ -58,4 +58,4 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema); // Export the User model using ES6 syntax

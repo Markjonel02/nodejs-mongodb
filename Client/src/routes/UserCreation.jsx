@@ -16,6 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import axios from "axios";
+import { axiosInstance } from "../lib/axiosInstance";
 
 const UserCreation = () => {
   const navigate = useNavigate();
@@ -116,6 +117,7 @@ const UserCreation = () => {
     setLoading(true);
 
     try {
+<<<<<<< HEAD
       const response = await axios.post(
         "https://nodejs-mongodb-server-7pfw.onrender.com/api/user/usercreate",
         {
@@ -126,6 +128,15 @@ const UserCreation = () => {
           password,
         }
       );
+=======
+      const response = await axiosInstance.post("/user/usercreate", {
+        firstName,
+        lastName,
+        username,
+        email,
+        password,
+      });
+>>>>>>> production
 
       const data = response.data;
 

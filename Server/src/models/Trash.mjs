@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const TrashSchema = new mongoose.Schema(
   {
@@ -49,5 +49,4 @@ const TrashSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-module.exports = mongoose.model("Trashnotes", TrashSchema);
+export default mongoose.model("Trash", TrashSchema); // Export the Trash model using ES6 syntax
