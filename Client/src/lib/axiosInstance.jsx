@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const VITE_API_BACKEND_URL =
-  "https://nodejs-mongodb-note-application.onrender.com/api";
+  "https://nodejs-mongodb-server-67rf.onrender.com/api";
 
 export const axiosInstance = axios.create({
   baseURL: VITE_API_BACKEND_URL,
