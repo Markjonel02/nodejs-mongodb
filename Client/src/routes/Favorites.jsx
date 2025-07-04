@@ -153,11 +153,22 @@ const Favorites = () => {
     setLoading(true);
     setError(null);
     try {
+<<<<<<< HEAD
+      const { data } = await axios.get(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/getfavorites",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        }
+      );
+=======
       const { data } = await axiosInstance.get("/getfavorites", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },
       });
+>>>>>>> production
       setFavoriteNotes(data);
     } catch (err) {
       console.error("Error fetching favorite notes:", err);
@@ -266,8 +277,13 @@ const Favorites = () => {
 
     setIsTogglingFavorite(true);
     try {
+<<<<<<< HEAD
+      await axios.patch(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/favorite/multiple-unfavorite",
+=======
       await axiosInstance.patch(
         "/favorite/multiple-unfavorite",
+>>>>>>> production
         {
           ids: Array.from(selectedNotes),
         },
@@ -317,8 +333,13 @@ const Favorites = () => {
     setIsTogglingFavorite(true);
 
     try {
+<<<<<<< HEAD
+      await axios.put(
+        `https://nodejs-mongodb-server-7pfw.onrender.com/api/favorites/single-unfavorite/${id}`,
+=======
       await axiosInstance.put(
         `/favorites/single-unfavorite/${id}`,
+>>>>>>> production
         {
           isFavorite: false,
           currentFavoriteStatus: currentFavoriteStatus,

@@ -117,6 +117,18 @@ const UserCreation = () => {
     setLoading(true);
 
     try {
+<<<<<<< HEAD
+      const response = await axios.post(
+        "https://nodejs-mongodb-server-7pfw.onrender.com/api/user/usercreate",
+        {
+          firstName,
+          lastName,
+          username,
+          email,
+          password,
+        }
+      );
+=======
       const response = await axiosInstance.post("/user/usercreate", {
         firstName,
         lastName,
@@ -124,6 +136,7 @@ const UserCreation = () => {
         email,
         password,
       });
+>>>>>>> production
 
       const data = response.data;
 
@@ -131,7 +144,7 @@ const UserCreation = () => {
       // upon successful registration, similar to a login endpoint.
       if (data.token) {
         localStorage.setItem("jwt_token", data.token); // Store the JWT in localStorage
-        console.log("JWT Token stored:", data.token);
+        /*  console.log("JWT Token stored:", data.token); */
       }
 
       toast({
