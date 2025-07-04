@@ -23,10 +23,7 @@ const port = process.env.PORT || 5000; // Use port from environment or default t
 
 // Determine CORS origin based on environment
 // In production, use CLIENT_URL from .env; otherwise, use http://localhost:5173 for development
-let corsOrigin =
-  process.env.NODE_ENV === "production"
-    ? process.env.CLIENT_URL
-    : "http://localhost:5173/";
+let corsOrigin = process.env.CLIENT_URL;
 
 // IMPORTANT FIX: Ensure the corsOrigin does NOT have a trailing slash
 // The client's Origin header typically does not include a trailing slash,
@@ -58,17 +55,16 @@ app.get("/api", (req, res) => {
 });
 
 // Serve static frontend files in production environment
-if (process.env.NODE_ENV === "production") {
-  // Serve static files from the client's build directory
-  app.use(express.static(path.join(__dirname, "../Client/dist")));
 
-  // For any other GET requests, serve the main index.html file
-  // This ensures that client-side routing works correctly
-  // Corrected syntax: `/*` instead of `{*any}`
-  app.get("/{*any}", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Client/dist", "index.html"));
-  });
-}
+// Serve static files from the client's build directory
+app.use(express.static(path.join(__dirname, "../Client/dist")));
+
+// For any other GET requests, serve the main index.html file
+// This ensures that client-side routing works correctly
+// Corrected syntax: `/*` instead of `{*any}`
+app.get("/{*any}", (req, res) => {
+  res.sendFile(path.join(__dirname, "../Client/dist", "index.html"));
+});
 
 // Connect to MongoDB and then start the server
 connectDB()
