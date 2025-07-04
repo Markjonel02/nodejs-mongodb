@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } = "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
@@ -15,13 +15,10 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
-// import axios from "axios"; // You don't need the default axios import if you use your 'api' instance
-import { api } from "../utils/api/api"; // This imports your configured Axios instance
-import axios from "axios";
-<<<<<<< HEAD
-=======
-import { axiosInstance } from "../lib/axiosInstance";
->>>>>>> production
+// Removed the conflicting and redundant axios imports
+// import { api } from "../utils/api/api";
+// import axios from "axios";
+import { axiosInstance } from "../lib/axiosInstance"; // Using this configured instance
 
 const UserLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -48,14 +45,9 @@ const UserLogin = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      // FIX: Use the 'api' instance directly and provide the relative path
-      const response = await axios.post(
-        "https://nodejs-mongodb-server-7pfw.onrender.com/api/user/userlogin",
-=======
+      // Using the configured axiosInstance with a relative path
       const response = await axiosInstance.post(
         `/user/userlogin`, // Your backend login route
->>>>>>> production
         {
           identifier, // Send the identifier (username or email)
           password,

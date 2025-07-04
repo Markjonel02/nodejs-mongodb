@@ -28,17 +28,10 @@ import { MdAssignmentAdd } from "react-icons/md";
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from "react-icons/md";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { motion } from "framer-motion";
-import axios from "axios";
 import { colors } from "../utils/colors"; // Assuming colors are defined here
 import { Link as RouterLink, useLocation } from "react-router-dom";
-<<<<<<< HEAD
-const VITE_API_URL =
-  import.meta.env.VITE_API_BACKEND_URL ||
-  "https://nodejs-mongodb-bkpu.onrender.com"; // Assuming you have an environment variable for the API URL
-=======
-import { MdApi } from "react-icons/md";
-import { axiosInstance } from "../lib/axiosInstance";
->>>>>>> production
+import { axiosInstance } from "../lib/axiosInstance"; // Keeping this from 'production' branch
+
 // Removed lazy imports from here, as they are used in the main App component for Routes, not directly in sidebarLinks
 // routes are used in the parent App.js (or similar) where <Routes> are defined.
 // The sidebar itself only needs the string path.
@@ -127,13 +120,8 @@ const Sidebar = ({ onNoteAdded }) => {
 
     try {
       // 3. Send a POST request to the backend API, including the Authorization header
-<<<<<<< HEAD
-      const response = await axios.post(
-        `${VITE_API_URL}/api/notes/notes`,
-=======
       const response = await axiosInstance.post(
-        "/api/notes",
->>>>>>> production
+        "/api/notes", // Using the production path for the notes API
         {
           // Request body
           title: newNoteTitle,
