@@ -65,8 +65,8 @@ if (process.env.NODE_ENV === "production") {
   // For any other GET requests, serve the main index.html file
   // This ensures that client-side routing works correctly
   // Corrected syntax: `/*` instead of `{*any}`
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../Client", "dist", "index.html"));
+  app.get("/{*any}", (req, res) => {
+    res.sendFile(path.join(__dirname, "../Client/dist", "index.html"));
   });
 }
 
