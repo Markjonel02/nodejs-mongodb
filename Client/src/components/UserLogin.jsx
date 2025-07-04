@@ -64,7 +64,7 @@ const UserLogin = ({ onLoginSuccess }) => {
       // 1. Store the JWT token in localStorage (if it exists in the response)
       if (data.token) {
         localStorage.setItem("jwtToken", data.token);
-        console.log("JWT Token stored:", data.token); // For debugging
+/*         console.log("JWT Token stored:", data.token);  */// For debugging
       }
 
       // 2. Store the user object in localStorage (as a string, if it exists)
